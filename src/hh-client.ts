@@ -1,13 +1,14 @@
+// @ts-nocheck
 // Клиент к hh.ru через Playwright-скрейпинг.
 // API api.hh.ru заблокирован ddos-guard для нашего IP, поэтому ходим на основной
 // сайт hh.ru как обычный браузер и забираем JSON из <template id="HH-Lux-InitialState">,
 // в котором лежит полное состояние страницы (vacancySearchResult / vacancyView).
 // Возвращаемые объекты приведены к формату прежнего API hh.ru, чтобы остальной код не менять.
-const path = require('path');
-const fs = require('fs');
-const { chromium } = require('playwright');
-const { env } = require('./config');
-const log = require('./logger');
+import path from "path";
+import fs from "fs";
+import {  chromium  } from "playwright";
+import {  env  } from "./config.js";
+import log from "./logger.js";
 
 const PROFILE = path.resolve(process.env.PW_USER_DATA_DIR || './data/browser-profile');
 
@@ -159,7 +160,13 @@ class HHClient {
   async searchVacancies(params) {
     const sp = new URLSearchParams();
     if (params.text) sp.set('text', params.text);
-    if (params.area != null) sp.set('area', String(params.area));
+    if (params.area != null) {
+      if (Array.isArray(params.area)) {
+        for (const id of params.area) sp.append('area', String(id));
+      } else {
+        sp.set('area', String(params.area));
+      }
+    }
     if (params.experience) sp.set('experience', params.experience);
     if (params.salary) sp.set('salary', String(params.salary));
     if (params.only_with_salary) sp.set('only_with_salary', 'true');
@@ -192,4 +199,4 @@ class HHClient {
   }
 }
 
-module.exports = HHClient;
+export default HHClient;

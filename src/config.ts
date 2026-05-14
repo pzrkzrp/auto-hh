@@ -1,7 +1,6 @@
 // Загрузка конфигурации из JSON и .env.
-require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
+import fs from "fs";
+import path from "path";
 
 function loadConfig() {
   const configPath = process.env.CONFIG_PATH || './config.json';
@@ -26,4 +25,4 @@ function env() {
   };
 }
 
-module.exports = { loadConfig, env };
+export { loadConfig, env };
