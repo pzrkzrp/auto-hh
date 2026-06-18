@@ -1,30 +1,13 @@
-// Генерация сопроводительного письма.
-// Использует OpenAI-совместимый API (OpenAI, Deepseek и т.п.).
-// Если API-ключ не задан — fallback на шаблон из config.json с плейсхолдерами:
-//   {title}, {employer}, {matchedSkills}, {area}.
 import OpenAI from "openai";
-import log from "./logger.js";
-import {  retryOnTransient  } from "./retry.js";
-import {  loadConfig  } from "./config.js";
-import {  stripHtml, parseJSON  } from "./claude.js";
+import log from "../logger.js";
+import { retryOnTransient } from "../retry.js";
+import { loadConfig } from "../config.js";
+import { getClient, buildResumeBlock } from "../ai-client.js";
+import { stripHtml, parseJSON } from "../text-utils.js";
+import { adaptResumeForVacancy } from "../adapt-resume.js";
+import { buildBatchSystemText } from "./system-text.js";
 
 const apiConfig = loadConfig().api || {};
-
-function getClient() {
-  const key = apiConfig.apiKey || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY;
-  if (!key) return null;
-  const opts: Record<string, any> = { apiKey: key, maxRetries: 3 };
-  if (apiConfig.baseUrl) opts.baseURL = apiConfig.baseUrl;
-  return new OpenAI(opts);
-}
-
-function buildResumeBlock(resume) {
-  if (!resume) return null;
-  if (resume.type === 'pdf') {
-    return { type: 'text', text: `=== РЕЗЮМЕ СОИСКАТЕЛЯ (PDF) ===\n${resume.filename}` };
-  }
-  return { type: 'text', text: `=== РЕЗЮМЕ СОИСКАТЕЛЯ ===\n${resume.text}` };
-}
 
 function buildFromTemplate(template, vacancy, matchedSkills) {
   const ctx = {
@@ -38,8 +21,8 @@ function buildFromTemplate(template, vacancy, matchedSkills) {
   return template.replace(/\{(\w+)\}/g, (_, k) => ctx[k] ?? '');
 }
 
-async function buildWithClaude(vacancy, matchedSkills) {
-  const client = getClient();
+async function buildWithClaude(vacancy, matchedSkills, resume = null, adaptResume = false) {
+  const client = getClient(apiConfig);
   if (!client) return null;
 
   const profile = process.env.APPLICANT_PROFILE || 'опытный разработчик';
@@ -48,7 +31,9 @@ async function buildWithClaude(vacancy, matchedSkills) {
   const description = stripHtml(vacancy.description).slice(0, 1000);
   const skills = (vacancy.key_skills || []).map(s => s.name).join(', ');
 
-  const userMsg = `Вакансия: ${vacancy.name}
+  const adaptedResume = adaptResume && resume ? adaptResumeForVacancy(resume, vacancy) : null;
+
+  const userMsg = `${adaptedResume ? `=== МОЁ РЕЗЮМЕ (релевантное) ===\n${adaptedResume}\n\n` : ''}Вакансия: ${vacancy.name}
 Компания: ${vacancy.employer?.name || '—'}
 Регион: ${vacancy.area?.name || '—'}
 Ключевые навыки: ${skills || '—'}
@@ -57,11 +42,11 @@ async function buildWithClaude(vacancy, matchedSkills) {
 Описание:
 ${description}
 
-Напиши короткое сопроводительное письмо от моего имени в официально-деловом стиле. ЖЁСТКОЕ ограничение: **300–400 символов включая пробелы и подпись с Telegram**. 2–4 предложения.
+Напиши короткое сопроводительное письмо от моего имени в официально-деловом стиле. 3–5 предложения.
 
 Образец:
 """
-Здравствуйте! Заинтересовала ваша вакансия — профиль полностью совпадает с моим опытом. Последние несколько лет работаю с React и NestJS, уверенно владею SQL/ORM, есть опыт с Next.js и SSR. Буду рад обсудить детали на созвоне.
+Здравствуйте! Заинтересовала вакансия в вашей компании — профиль полностью совпадает с моим опытом. Последние несколько лет работаю с React и NestJS, уверенно владею SQL/ORM, есть опыт с Next.js и SSR. Буду рад обсудить детали на созвоне.
 Telegram: @stay_punx
 """
 
@@ -74,12 +59,12 @@ Telegram: @stay_punx
 - Без markdown, без "С уважением", без имени в подписи.
 - Заверши строкой "Telegram: @stay_punx".
 - Не упоминай зарплату, вилку, ожидания по доходу — ни конкретных цифр, ни общих формулировок ("по рынку", "обсуждаемо" и т.п.).
-- Проверь длину: 300–400 символов.`;
+- Не пиши Заинтересовала вакансия ${vacancy.employer?.name}, а пиши заинтересовала ваша вакансия или вакансия в вашей компании
+`;
 
   try {
     const resp = await retryOnTransient(() => client.chat.completions.create({
       model,
-      max_tokens: 4000,
       messages: [
         {
           role: 'system',
@@ -99,34 +84,12 @@ Telegram: @stay_punx
   }
 }
 
-async function buildCoverLetter(template, vacancy, matchedSkills) {
-  const claudeText = await buildWithClaude(vacancy, matchedSkills);
+async function buildCoverLetter(template, vacancy, matchedSkills, resume = null) {
+  const cfg = loadConfig();
+  const adaptResume = cfg.adaptResume !== false;
+  const claudeText = await buildWithClaude(vacancy, matchedSkills, resume, adaptResume);
   if (claudeText) return claudeText;
   return buildFromTemplate(template, vacancy, matchedSkills);
-}
-
-function buildBatchSystemText(profile: string): string {
-  return `Ты помогаешь соискателю писать сопроводительные письма для откликов на hh.ru. Профиль соискателя: ${profile}
-Для каждой вакансии напиши короткое сопроводительное от первого лица в официально-деловом стиле. ЖЁСТКОЕ ограничение: **300–400 символов включая пробелы и подпись с Telegram**. 2–4 предложения.
-
-Образец:
-"""
-Здравствуйте! Заинтересовала ваша вакансия — профиль полностью совпадает с моим опытом. Последние несколько лет работаю с React и NestJS, уверенно владею SQL/ORM, есть опыт с Next.js и SSR. Буду рад обсудить детали на созвоне.
-Telegram: @stay_punx
-"""
-
-Правила:
-- Официально-деловой, нейтрально-вежливый тон. Полные предложения, грамотный русский. Без разговорности и сленга.
-- Избегай канцеляритных штампов ("рассмотрите мою кандидатуру", "готов внести вклад в развитие"): по делу, но корректно.
-- Начни с "Здравствуйте!".
-- 1–2 конкретных совпадения из описания вакансии.
-- Без markdown, без "С уважением", без имени в подписи.
-- Заверши строкой "Telegram: @stay_punx".
-- Проверь длину: 300–400 символов.
-
-Верни ТОЛЬКО JSON в формате:
-{"letters": [{"vacancyId": "id", "coverLetter": "текст"}, ...]}
-Никаких пояснений, никакого markdown, только JSON.`;
 }
 
 function formatVacancyShort(vacancy, matchedSkills) {
@@ -146,16 +109,19 @@ ${description}`;
 // Генерирует сопроводительные пачками по batchSize вакансий за один запрос.
 // items: [{ vacancy, matchedSkills }]. Возвращает Map<vacancyId, text>.
 // onBatch(partialResult) — вызывается после каждой пачки с накопленным результатом.
-async function buildCoverLettersBatch(resume, items, batchSize = 1, onBatch = null) {
-  const client = getClient();
+async function buildCoverLettersBatch(resume, items, batchSize = 10, onBatch = null) {
+  const client = getClient(apiConfig);
   const result = new Map();
   if (!client || !items.length) return result;
 
-  const model = process.env.CLAUDE_MODEL || 'gpt-4o';
+  const model = process.env.CLAUDE_MODEL;
   const profile = process.env.APPLICANT_PROFILE || 'опытный разработчик';
-  const resumeBlock = buildResumeBlock(resume);
+  const cfg = loadConfig();
+  const adapt = cfg.adaptResume !== false;
+  const resumeBlock = !adapt ? buildResumeBlock(resume) : null;
 
-  const systemText = buildBatchSystemText(profile);
+  const systemText = buildBatchSystemText(profile) +
+    (adapt ? '\n\nДля каждой вакансии передано адаптированное под неё резюме — учитывай его при составлении письма, указывая релевантный опыт.' : '');
 
   const batchTexts = [];
   for (let i = 0; i < items.length; i += batchSize) {
@@ -163,14 +129,22 @@ async function buildCoverLettersBatch(resume, items, batchSize = 1, onBatch = nu
     batchTexts.push({
       idx: batchTexts.length + 1,
       batch,
-      text: batch.map((it, idx) =>
-        `=== ВАКАНСИЯ #${idx + 1} ===\n${formatVacancyShort(it.vacancy, it.matchedSkills)}`
-      ).join('\n\n'),
+      text: batch.map((it, idx) => {
+        let block = '';
+        if (adapt) {
+          const adapted = adaptResumeForVacancy(resume, it.vacancy);
+          if (adapted) {
+            block += `=== РЕЗЮМЕ (релевантное для вакансии #${idx + 1}) ===\n${adapted}\n\n`;
+          }
+        }
+        block += `=== ВАКАНСИЯ #${idx + 1} ===\n${formatVacancyShort(it.vacancy, it.matchedSkills)}`;
+        return block;
+      }).join('\n\n'),
     });
   }
 
   let nextBatchIdx = 0;
-  const CONCURRENCY = 3;
+  const CONCURRENCY = 10;
 
   async function runBatch(ii) {
     const { idx, batch, text } = batchTexts[ii];
@@ -187,7 +161,7 @@ async function buildCoverLettersBatch(resume, items, batchSize = 1, onBatch = nu
     try {
       const resp = await retryOnTransient(() => client.chat.completions.create({
         model,
-        max_tokens: 4000,
+        max_completion_tokens: 1000000,
         messages,
       }));
 
