@@ -1,0 +1,48 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Резюме</h1>
+    <button class="btn-primary" (click)="fileInput.click()">Загрузить</button>
+    <input #fileInput type="file" hidden (change)="upload($event)" accept=".md,.txt,.pdf" />
+  </div>
+
+  @if (error()) {
+    <div class="error-banner">
+      <span>⚠️</span>
+      <span>{{ error() }}</span>
+      <button class="btn-dismiss" (click)="error.set('')">×</button>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Загрузка...</p>
+    </div>
+  } @else if (!items().length) {
+    <div class="empty-state">
+      <span class="icon">📄</span>
+      <h3>Нет резюме</h3>
+      <p>Загрузите резюме в формате .md, .txt или .pdf</p>
+    </div>
+  } @else {
+    <div class="resume-grid">
+      @for (r of items(); track r.resumeId) {
+        <div class="resume-card" [class.active]="r.resumeId === activeResumeId()">
+          <div class="resume-card-body">
+            <h3>{{ r.name }}</h3>
+            <p class="resume-filename">{{ r.filename }}</p>
+            <p class="resume-date">{{ r.createdAt | date }}</p>
+          </div>
+          <div class="resume-card-actions">
+            @if (r.resumeId === activeResumeId()) {
+              <span class="active-badge">✓ Активно</span>
+            } @else {
+              <button class="btn-activate" (click)="activate(r.resumeId)">Активировать</button>
+            }
+            <button class="btn-delete" (click)="remove(r.resumeId)">🗑️</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

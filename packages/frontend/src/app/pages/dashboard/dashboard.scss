@@ -1,0 +1,157 @@
+.page-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ── Stats row ── */
+.stats-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  flex: 1;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+
+  h1 {
+    margin: 0 0 4px;
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.9rem;
+  }
+}
+
+/* ── Vacancy card ── */
+.vacancy-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.vacancy-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vacancy-meta {
+  margin: 4px 0 0;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.85rem;
+}
+
+/* ── Score badge ── */
+.score-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+  background: #e8e8e8;
+  color: #555;
+
+  &.high {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  &.medium {
+    background: #fff3e0;
+    color: #e65100;
+  }
+
+  &.low {
+    background: #fce4ec;
+    color: #c62828;
+  }
+}
+
+/* ── States ── */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 0;
+  color: #c62828;
+
+  .icon {
+    font-size: 2.5rem;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 0;
+  color: rgba(0, 0, 0, 0.5);
+
+  .icon {
+    font-size: 2.5rem;
+  }
+
+  h3 {
+    margin: 0;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.8);
+  }
+
+  p {
+    margin: 0 0 16px;
+  }
+}
+
+/* ── Button ── */
+.btn-primary {
+  display: inline-block;
+  padding: 10px 24px;
+  background: #1976d2;
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #1565c0;
+  }
+}
+
+/* ── Skeleton ── */
+.skeleton-card {
+  height: 120px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
