@@ -32,43 +32,51 @@ function toMarkdown(entries: any[], title: string): string {
   return lines.join('\n');
 }
 
-async function writeToMongo(collection: string, entries: any[]): Promise<void> {
+async function writeToMongo(collection: string, entries: any[], userId?: string): Promise<void> {
   if (!entries.length) return;
   await connect();
   const key = dateKey();
+  const doc: any = { date: key, entries };
+  if (userId) doc.userId = userId;
+  const filter: any = { date: key };
+  if (userId) filter.userId = userId;
   await dbInstance().collection(collection).updateOne(
-    { date: key },
-    { $set: { date: key, entries } },
+    filter,
+    { $set: doc },
     { upsert: true },
   );
 }
-export async function getDigestsByDate(collection: string, date: string): Promise<DigestEntry[]> {
+export async function getDigestsByDate(collection: string, date: string, userId?: string): Promise<DigestEntry[]> {
   await connect();
-  const doc = await dbInstance().collection<DigestDoc>(collection).findOne({ date }, { projection: { entries: 1 } });
+  const filter: any = { date };
+  if (userId) filter.userId = userId;
+  const doc = await dbInstance().collection<DigestDoc>(collection).findOne(filter, { projection: { entries: 1 } });
   return doc?.entries || [];
 }
 // выводит все дайджесты без отклика
-export async function getAllDigests(collection: string): Promise<DigestEntry[]> {
+export async function getAllDigests(collection: string, userId?: string): Promise<DigestEntry[]> {
   await connect();
-  const docs = await dbInstance().collection<DigestDoc>(collection).find({}, { projection: { entries: 1 }, sort: { date: -1 } }).toArray();
+  const filter: any = {};
+  if (userId) filter.userId = userId;
+  const docs = await dbInstance().collection<DigestDoc>(collection).find(filter, { projection: { entries: 1 }, sort: { date: -1 } }).toArray();
   return docs.flatMap(d => d.entries || []);
 }
-export async function writeDigest(entries: any[]): Promise<string | null> {
+export async function writeDigest(entries: any[], userId?: string): Promise<string | null> {
   if (!entries.length) return null;
   ensureDir();
   const key = dateKey();
   const md = path.join(DATA_DIR, `digest-${key}.md`);
   fs.writeFileSync(md, toMarkdown(entries, 'Дайджест вакансий'));
-  await writeToMongo('digest', entries);
+  await writeToMongo('digest', entries, userId);
   return md;
 }
 
-export async function writeRejected(entries: any[]): Promise<string | null> {
+export async function writeRejected(entries: any[], userId?: string): Promise<string | null> {
   if (!entries.length) return null;
   ensureDir();
   const key = dateKey();
   const md = path.join(DATA_DIR, `rejected-${key}.md`);
   fs.writeFileSync(md, toMarkdown(entries, 'Отклонённые вакансии'));
-  await writeToMongo('rejected', entries);
+  await writeToMongo('rejected', entries, userId);
   return md;
 }

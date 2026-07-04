@@ -1,4 +1,5 @@
 // Хранилище истории откликов в MongoDB.
+// Все методы принимают опциональный userId для мультиарендности.
 import { connect, dbInstance } from "./db";
 import { Collection } from "mongodb";
 
@@ -9,6 +10,7 @@ interface HistoryDoc {
   status: 'seen' | 'applied';
   at: Date;
   meta?: Record<string, any>;
+  userId?: string | null;
 }
 
 async function col(): Promise<Collection<HistoryDoc>> {
@@ -16,9 +18,11 @@ async function col(): Promise<Collection<HistoryDoc>> {
   return dbInstance().collection<HistoryDoc>(COLLECTION);
 }
 
-export async function load(): Promise<{ applied: Record<string, any>; seen: Record<string, string> }> {
+export async function load(userId?: string): Promise<{ applied: Record<string, any>; seen: Record<string, string> }> {
   const c = await col();
-  const docs = await c.find({}).toArray();
+  const filter: any = {};
+  if (userId) filter.userId = userId;
+  const docs = await c.find(filter).toArray();
   const applied: Record<string, any> = {};
   const seen: Record<string, string> = {};
   for (const d of docs) {
@@ -28,33 +32,41 @@ export async function load(): Promise<{ applied: Record<string, any>; seen: Reco
   return { applied, seen };
 }
 
-export async function markApplied(vacancyId: string, meta: Record<string, any>): Promise<void> {
+export async function markApplied(vacancyId: string, meta: Record<string, any>, userId?: string): Promise<void> {
   const c = await col();
+  const doc: any = { vacancyId: String(vacancyId), status: 'applied', at: new Date(), meta };
+  if (userId) doc.userId = userId;
   await c.updateOne(
     { vacancyId: String(vacancyId) },
-    { $set: { vacancyId: String(vacancyId), status: 'applied', at: new Date(), meta } },
+    { $set: doc },
     { upsert: true },
   );
 }
 
-export async function markSeen(vacancyId: string): Promise<void> {
+export async function markSeen(vacancyId: string, userId?: string): Promise<void> {
   const c = await col();
+  const doc: any = { vacancyId: String(vacancyId), status: 'seen', at: new Date() };
+  if (userId) doc.userId = userId;
   await c.updateOne(
     { vacancyId: String(vacancyId) },
-    { $set: { vacancyId: String(vacancyId), status: 'seen', at: new Date() } },
+    { $set: doc },
     { upsert: true },
   );
 }
 
-export async function isApplied(vacancyId: string): Promise<boolean> {
+export async function isApplied(vacancyId: string, userId?: string): Promise<boolean> {
   const c = await col();
-  const doc = await c.findOne({ vacancyId: String(vacancyId), status: 'applied' });
+  const filter: any = { vacancyId: String(vacancyId), status: 'applied' };
+  if (userId) filter.userId = userId;
+  const doc = await c.findOne(filter);
   return Boolean(doc);
 }
 
-export async function isSeen(vacancyId: string): Promise<boolean> {
+export async function isSeen(vacancyId: string, userId?: string): Promise<boolean> {
   const c = await col();
-  const doc = await c.findOne({ vacancyId: String(vacancyId) });
+  const filter: any = { vacancyId: String(vacancyId) };
+  if (userId) filter.userId = userId;
+  const doc = await c.findOne(filter);
   return Boolean(doc);
 }
 

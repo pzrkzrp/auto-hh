@@ -26,6 +26,8 @@ program
   .option('--no-claude', 'Без Claude, только локальный фильтр')
   .option('--reset', 'Сбросить историю и кэш перед запуском')
   .option('-r, --resume <name>', 'Имя резюме из RESUMES_DIR')
+  .option('-j, --job <id>', 'ID search_jobs для обновления статуса')
+  .option('-u, --user <id>', 'userId для мультиарендности')
   .action(cmdSearch);
 
 program
@@ -34,6 +36,8 @@ program
   .option('-l, --limit <n>', 'Сколько вакансий обработать', parseInt)
   .option('-t, --type <type>', 'latest (сегодня) или all (все дни)', 'latest')
   .option('--login', 'Режим логина (открыть браузер для входа на hh.ru)')
+  .option('-q, --queue', 'Читать вакансии из apply_queue вместо дайджеста')
+  .option('-u, --user <id>', 'userId для мультиарендности')
   .action(cmdApply);
 
 program

@@ -1,0 +1,125 @@
+@use '@angular/material' as mat;
+
+html, body { height: 100%; margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+mat-sidenav-container { height: 100vh; }
+
+.page-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.spacer { flex: 1 1 auto; }
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: rgba(0, 0, 0, 0.54);
+
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+  }
+
+  h3 { margin: 0 0 8px; font-weight: 500; }
+  p { margin: 0 0 24px; }
+}
+
+.error-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: #d32f2f;
+
+  mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 12px; }
+}
+
+.vacancy-card {
+  margin-bottom: 16px;
+
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+
+    &.high { background: #4caf50; }
+    &.medium { background: #ff9800; }
+    &.low { background: #f44336; }
+  }
+
+  .matched-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 8px 0;
+  }
+
+  .cover-letter-preview {
+    margin-top: 12px;
+    padding: 12px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    font-size: 14px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+
+  &.queued { background: #e3f2fd; color: #1565c0; }
+  &.processing { background: #fff3e0; color: #e65100; }
+  &.success { background: #e8f5e9; color: #2e7d32; }
+  &.failed { background: #ffebee; color: #c62828; }
+  &.skipped { background: #f5f5f5; color: #616161; }
+}
+
+.skeleton-card {
+  height: 120px;
+  margin-bottom: 16px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f5f5f5;
+
+  mat-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 32px;
+  }
+
+  mat-form-field { width: 100%; }
+}

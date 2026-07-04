@@ -7,5 +7,5 @@ resume.pdf
 *.log
 .idea/
 .claude/
-/dist/
+dist/
 /.playwright-mcp/

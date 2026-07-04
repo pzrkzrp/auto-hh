@@ -5,6 +5,7 @@ import {  chromium  } from "playwright";
 import log from "../logger";
 import history from "../history-store";
 import  {getDigestsByDate, getAllDigests} from "../digest-store";
+import {  connect, dbInstance  } from "../db";
 
 const PROFILE = path.resolve(process.env.PW_USER_DATA_DIR || './data/browser-profile');
 const HEADLESS = String(process.env.PW_HEADLESS || 'false') === 'true';
@@ -224,6 +225,21 @@ async function loginFlow() {
   await new Promise(() => {}); // бесконечное ожидание — браузер жив, пока не закроют.
 }
 
+async function loadQueue(userId?: string): Promise<any[]> {
+  await connect();
+  const filter: any = { status: 'queued' };
+  if (userId) filter.userId = userId;
+  return dbInstance().collection('apply_queue').find(filter).sort({ addedAt: 1 }).toArray();
+}
+
+async function updateQueueItem(id: string, status: string, errorMessage?: string): Promise<void> {
+  const { ObjectId } = require('mongodb');
+  await dbInstance().collection('apply_queue').updateOne(
+    { _id: new ObjectId(id) },
+    { $set: { status, errorMessage: errorMessage || null, processedAt: new Date(), updatedAt: new Date() } },
+  );
+}
+
 async function apply(opts: Record<string, any> = {}) {
   if (opts.login) {
     await loginFlow();
@@ -231,8 +247,15 @@ async function apply(opts: Record<string, any> = {}) {
   }
 
   ensureProfile();
-  const type = opts.type || 'latest';
-  const entries = await loadDigest(type);
+
+  let entries: any[];
+  if (opts.queue) {
+    entries = await loadQueue(opts.user);
+    log.info(`${entries.length} items in apply queue`);
+  } else {
+    const type = opts.type || 'latest';
+    entries = await loadDigest(type);
+  }
 
   if (opts.limit && Number.isFinite(opts.limit) && opts.limit > 0) {
     entries.splice(opts.limit);
@@ -256,18 +279,31 @@ async function apply(opts: Record<string, any> = {}) {
 
   let ok = 0, fail = 0;
   for (const entry of entries) {
-    const state = await history.load();
-    const rec = state.applied[entry.id];
+    // Determine the vacancy ID — queue items use 'vacancyId', digest entries use 'id'
+    const vid = entry.vacancyId || entry.id;
+    const queueId = opts.queue ? entry._id?.toHexString?.() || entry._id : null;
+
+    const state = await history.load(opts.user);
+    const rec = state.applied[vid];
     if (rec && !rec.digestOnly) {
-      log.info(`Skip ${entry.id}: already applied`);
+      log.info(`Skip ${vid}: already applied`);
+      if (opts.queue && queueId) await updateQueueItem(queueId, 'skipped', 'already applied');
       continue;
     }
+
+    // Mark queue item as processing
+    if (opts.queue && queueId) await updateQueueItem(queueId, 'processing');
+
     try {
-      const res = await applyToVacancy(page, entry);
+      // Ensure entry has 'id' for applyToVacancy
+      const applyEntry = { ...entry, id: vid };
+      const res = await applyToVacancy(page, applyEntry);
       if (res.ok) {
-        await history.markApplied(entry.id, { via: 'playwright', url: entry.url });
+        await history.markApplied(vid, { via: 'playwright', url: entry.url }, opts.user);
+        if (opts.queue && queueId) await updateQueueItem(queueId, 'success');
         ok++;
       } else {
+        if (opts.queue && queueId) await updateQueueItem(queueId, 'failed', res.reason);
         fail++;
       }
     } catch (err) {

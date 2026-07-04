@@ -11,6 +11,7 @@ import {  judgeVacancy, judgeVacanciesBatch  } from "../judge";
 import {  writeDigest, writeRejected  } from "../digest-store";
 import resetData from "../reset.js";
 import { registerResume } from "../resume-store.js";
+import { connect, dbInstance } from "../db.js";
 import log from "../logger.js";
 
 async function collectVacancies(client, search, cache) {
@@ -254,6 +255,24 @@ async function buildResults(accepted, coverMap, cache, cfg, resume = null) {
   return matched;
 }
 
+async function updateJobStatus(jobId: string, status: string, result?: any): Promise<void> {
+  if (!jobId) return;
+  try {
+    const { ObjectId } = require('mongodb');
+    await connect();
+    const set: any = { status, updatedAt: new Date() };
+    if (status === 'running') set.startedAt = new Date();
+    if (status === 'completed' || status === 'failed') set.completedAt = new Date();
+    if (result) set.result = result;
+    await dbInstance().collection('search_jobs').updateOne(
+      { _id: new ObjectId(jobId) },
+      { $set: set },
+    );
+  } catch (err: any) {
+    log.warn(`Failed to update job ${jobId}: ${err.message}`);
+  }
+}
+
 async function search(opts: Record<string, any> = {}) {
   if (opts.config) process.env.CONFIG_PATH = opts.config;
   if (opts.reset) {
@@ -262,6 +281,9 @@ async function search(opts: Record<string, any> = {}) {
 
   const cfg = loadConfig();
   const client = new HHClient();
+
+  // Update job status if --job provided
+  await updateJobStatus(opts.job, 'running');
   const resume = loadResume(opts.resume);
   const resumeId = resume?.id;
   const minScore = cfg.apply.minClaudeScore ?? 7;
@@ -298,20 +320,27 @@ async function search(opts: Record<string, any> = {}) {
 
     log.info(`Judged by Claude: ${judgedCount}, accepted: ${matched.length}, rejected: ${rejected.length}`);
 
-    const rejectedFile = writeRejected(rejected);
+    const rejectedFile = writeRejected(rejected, opts.user);
     if (rejectedFile) log.info(`Rejected saved: ${rejectedFile} (${rejected.length} vacancies)`);
 
     if (matched.length === 0) {
       log.info('No matching vacancies.');
+      await updateJobStatus(opts.job, 'completed', { totalVacancies: items.length, matched: 0, rejected: rejected.length });
       return;
     }
 
-    const file = writeDigest(matched);
+    const file = writeDigest(matched, opts.user);
     log.info(`Digest saved: ${file} (${matched.length} vacancies)`);
     console.log('\n=== TOP MATCHES ===');
     for (const e of matched.slice(0, 10)) {
       console.log(`- [${e.score ?? '?'}/10] ${e.title} @ ${e.employer} | ${e.salary}\n  ${e.url}`);
     }
+
+    await updateJobStatus(opts.job, 'completed', { totalVacancies: items.length, matched: matched.length, rejected: rejected.length });
+  } catch (err: any) {
+    log.error(`Search failed: ${err.message}`);
+    await updateJobStatus(opts.job, 'failed', { error: err.message });
+    throw err;
   } finally {
     await client.close?.();
   }

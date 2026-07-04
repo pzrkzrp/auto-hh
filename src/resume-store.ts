@@ -9,26 +9,31 @@ export interface ResumeDoc {
   createdAt: Date;
 }
 
-export async function listResumes(): Promise<ResumeDoc[]> {
+export async function listResumes(userId?: string): Promise<ResumeDoc[]> {
   await connect();
+  const filter: any = {};
+  if (userId) filter.userId = userId;
   return dbInstance().collection<ResumeDoc>('resumes')
-    .find({}, { sort: { createdAt: -1 } })
+    .find(filter, { sort: { createdAt: -1 } })
     .toArray();
 }
 
-export async function findResume(resumeId: string): Promise<ResumeDoc | null> {
+export async function findResume(resumeId: string, userId?: string): Promise<ResumeDoc | null> {
   await connect();
-  return dbInstance().collection<ResumeDoc>('resumes').findOne({ resumeId });
+  const filter: any = { resumeId };
+  if (userId) filter.userId = userId;
+  return dbInstance().collection<ResumeDoc>('resumes').findOne(filter);
 }
 
-export async function registerResume(resume: Resume): Promise<void> {
+export async function registerResume(resume: Resume, userId?: string): Promise<void> {
   await connect();
-  const doc: ResumeDoc = {
+  const doc: any = {
     resumeId: resume.id,
     name: resume.name,
     filename: resume.filename,
     createdAt: new Date(),
   };
+  if (userId) doc.userId = userId;
   await dbInstance().collection<ResumeDoc>('resumes').updateOne(
     { resumeId: doc.resumeId },
     { $setOnInsert: doc },
