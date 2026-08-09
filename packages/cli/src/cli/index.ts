@@ -28,6 +28,7 @@ program
   .option('-r, --resume <name>', 'Имя резюме из RESUMES_DIR')
   .option('-j, --job <id>', 'ID search_jobs для обновления статуса')
   .option('-u, --user <id>', 'userId для мультиарендности')
+  .option('-w, --worker', 'Режим воркера: слушать BullMQ-очередь search (джобы от backend)')
   .action(cmdSearch);
 
 program
@@ -37,6 +38,7 @@ program
   .option('-t, --type <type>', 'latest (сегодня) или all (все дни)', 'latest')
   .option('--login', 'Режим логина (открыть браузер для входа на hh.ru)')
   .option('-q, --queue', 'Читать вакансии из apply_queue вместо дайджеста')
+  .option('-w, --worker', 'Режим воркера: слушать BullMQ-очередь apply (backend кладёт джобы)')
   .option('-u, --user <id>', 'userId для мультиарендности')
   .action(cmdApply);
 

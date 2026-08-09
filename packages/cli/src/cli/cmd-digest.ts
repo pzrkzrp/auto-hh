@@ -4,7 +4,7 @@ import path from "path";
 import { connect, dbInstance } from "../clients/db";
 import log from "../logger.js";
 
-async function digest(opts: Record<string, any> = {}) {
+async function digest(opts: { json?: boolean } = {}) {
   // Пробуем MongoDB
   try {
     await connect();

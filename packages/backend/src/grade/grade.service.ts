@@ -1,29 +1,27 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { Db, ObjectId } from 'mongodb';
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { GradeJob } from './grade-job.schema';
 
 @Injectable()
 export class GradeService {
-  constructor(@Inject('DATABASE_CONNECTION') private db: Db) {}
-
-  private get col() {
-    return this.db.collection('grade_results');
-  }
+  constructor(@InjectModel(GradeJob.name) private gradeModel: Model<GradeJob>) {}
 
   async createGradeJob(userId: string, resumeId: string) {
     const now = new Date();
     const job = {
       userId,
       resumeId,
-      status: 'pending',
+      status: 'pending' as const,
       result: null,
       createdAt: now,
       updatedAt: now,
     };
-    const result = await this.col.insertOne(job as any);
-    return { id: result.insertedId.toHexString(), status: 'pending' };
+    const created = await this.gradeModel.create(job);
+    return { id: created._id.toHexString(), status: 'pending' };
   }
 
   async getGradeJob(userId: string, id: string) {
-    return this.col.findOne({ _id: new ObjectId(id), userId } as any);
+    return this.gradeModel.findOne({ _id: id, userId }).lean().exec();
   }
 }

@@ -370,7 +370,8 @@ npm run apply
 │  │  │  ├─ apply-playwright.ts # Playwright-логика отклика (легаси-точка входа)
 │  │  │  ├─ resume.ts           # загрузка резюме (файл или директория)
 │  │  │  ├─ config.ts           # загрузка config.json + .env
-│  │  │  └─ logger.ts / retry.ts / text-utils.ts / types.ts
+│  │  │  ├─ utils/text-utils.ts # stripHtml / parseJSON / safeJsonParse
+│  │  │  └─ logger.ts / retry.ts / types.ts
 │  │  ├─ data/                  # данные CLI: дайджесты, профиль браузера (gitignored)
 │  │  ├─ migrations/            # миграции MongoDB
 │  │  └─ scripts/               # вспомогательные скрипты

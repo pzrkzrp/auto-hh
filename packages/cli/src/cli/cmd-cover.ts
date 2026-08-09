@@ -5,7 +5,7 @@ import { loadResume } from "../resume.js";
 import { loadConfig } from "../config.js";
 import log from "../logger.js";
 
-async function cover(vacancyId: string, opts: Record<string, any> = {}) {
+async function cover(vacancyId: string, opts: { resume?: string } = {}) {
   if (!vacancyId) {
     console.error('Usage: auto-hh cover <vacancy-id>');
     process.exit(1);
@@ -40,7 +40,7 @@ async function cover(vacancyId: string, opts: Record<string, any> = {}) {
     console.log();
 
     log.info(`Generating cover letter...`);
-    const letter = await buildCoverLetter(cfg.apply.coverLetterTemplate, full);
+    const letter = await buildCoverLetter(cfg.apply?.coverLetterTemplate || '', full);
 
     if (letter) {
       console.log('--- COVER LETTER ---');

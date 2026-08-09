@@ -2,10 +2,16 @@
 import fs from "fs";
 import path from "path";
 import {  chromium  } from "playwright";
+import type { Page, BrowserContext } from "playwright";
+import { Worker } from "bullmq";
+import { ObjectId } from "mongodb";
+import { APPLY_QUEUE, ApplyJobData } from "@auto-hh/shared";
 import log from "../logger";
+import { errMsg } from "../utils/errors.js";
 import history from "../store/history-store";
 import  {getDigestsByDate, getAllDigests} from "../store/digest-store";
-import {  connect, dbInstance  } from "../clients/db";
+import {  connect, dbInstance, close as closeDb  } from "../clients/db";
+import { connectQueueDb, queueDbInstance, closeQueueDb } from "../clients/queue-db";
 
 const PROFILE = path.resolve(process.env.PW_USER_DATA_DIR || './data/browser-profile');
 const HEADLESS = String(process.env.PW_HEADLESS || 'false') === 'true';
@@ -14,8 +20,52 @@ const MAX_DELAY = parseInt(process.env.PW_MAX_DELAY_MS || '2000', 10);
 const TEST_MODE = (process.env.PW_TEST_MODE || 'manual').toLowerCase();
 const TEST_TIMEOUT = parseInt(process.env.PW_TEST_TIMEOUT_MS || '0', 10);
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
+function rand(min: number, max: number) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+// Минимум полей вакансии для отклика (digest-запись или джоба из apply_queue).
+// title/employer могут отсутствовать — в applyToVacancy везде есть fallback.
+interface ApplyEntry {
+  id: string;
+  url: string;
+  title?: string;
+  employer?: string;
+  coverLetter?: string | null;
+}
+
+// Запись в apply_queue (документы создаёт backend; CLI читает их в батч-режиме --queue).
+interface ApplyQueueDoc {
+  _id: ObjectId;
+  vacancyId?: string;
+  id?: string;
+  url?: string;
+  title?: string;
+  employer?: string;
+  status?: string;
+  userId?: string;
+  addedAt?: Date;
+}
+
+// Единая запись для цикла отклика: и из дайджеста (DigestEntry), и из очереди.
+interface QueueEntry {
+  id: string;
+  vacancyId?: string;
+  url: string;
+  title?: string;
+  employer?: string;
+  coverLetter?: string;
+  _id?: ObjectId;
+}
+
+// Опции команды `auto-hh apply` (commander). Совпадают с флагами в index.ts.
+interface ApplyCliOpts {
+  login?: boolean;
+  worker?: boolean;
+  queue?: boolean;
+  user?: string;
+  limit?: number;
+  type?: string;
+}
 
 function ensureProfile() {
   if (!fs.existsSync(PROFILE)) fs.mkdirSync(PROFILE, { recursive: true });
@@ -30,7 +80,7 @@ async function loadDigest(type: string) {
   return getDigestsByDate('digest', date);
 }
 
-async function applyToVacancy(page, entry) {
+async function applyToVacancy(page: Page, entry: ApplyEntry) {
   log.info(`Applying to ${entry.id} (${entry.employer || '?'}: ${entry.title})`);
   const minDelay = parseInt(process.env.PW_MIN_DELAY_MS || '500', 10);
   const maxDelay = parseInt(process.env.PW_MAX_DELAY_MS || '2000', 10);
@@ -75,9 +125,10 @@ async function applyToVacancy(page, entry) {
     if (TEST_MODE === 'manual') {
       try {
         await waitForEnter(`Тест для вакансии "${entry.title}" (${entry.url}). Пройдите тест в браузере.`);
-      } catch (e) {
-        log.warn(`Manual test timeout for ${entry.id}: ${e.message}`);
-        return { ok: false, reason: e.message };
+      } catch (e: unknown) {
+        const msg = errMsg(e);
+        log.warn(`Manual test timeout for ${entry.id}: ${msg}`);
+        return { ok: false, reason: msg };
       }
     }
   }
@@ -120,7 +171,7 @@ async function applyToVacancy(page, entry) {
 
   try {
     await page.waitForFunction(
-      (args) => {
+      (args: { textareaSel: string; hadTextarea: boolean }) => {
         const url = window.location.href;
         // Полностраничная форма: редирект на negotiations/test
         if (url.includes('/applicant/negotiations/') || url.includes('/applicant/vacancy_response/test')) {
@@ -156,9 +207,10 @@ async function applyToVacancy(page, entry) {
     if (TEST_MODE === 'manual') {
       try {
         await waitForEnter(`Тест для вакансии "${entry.title || entry.id}" (${entry.url}). Пройдите тест в браузере.`);
-      } catch (e) {
-        log.warn(`Manual test timeout for ${entry.id}: ${e.message}`);
-        return { ok: false, reason: e.message };
+      } catch (e: unknown) {
+        const msg = errMsg(e);
+        log.warn(`Manual test timeout for ${entry.id}: ${msg}`);
+        return { ok: false, reason: msg };
       }
     }
   }
@@ -167,7 +219,7 @@ async function applyToVacancy(page, entry) {
   return { ok: true };
 }
 
-async function detectPostState(page) {
+async function detectPostState(page: Page) {
   const url = page.url();
   if (/\/applicant\/vacancy_response\/test/.test(url)) return 'test';
   if (/\/applicant\/negotiations/.test(url)) return 'applied';
@@ -175,7 +227,7 @@ async function detectPostState(page) {
 }
 
 // Проверяет, не откликались ли уже на эту вакансию, по содержимому страницы.
-async function checkAlreadyResponded(page) {
+async function checkAlreadyResponded(page: Page) {
   // 1. Кнопка отклика — ссылка на negotiations (уже откликнулись)
   const respondedLink = await page.$('a[data-qa="vacancy-response-link-top"][href*="negotiation"], a[data-qa="vacancy-response-link"][href*="negotiation"]');
   if (respondedLink) return true;
@@ -190,10 +242,10 @@ async function checkAlreadyResponded(page) {
   return false;
 }
 
-function waitForEnter(message) {
+function waitForEnter(message: string) {
   return new Promise<void>((resolve, reject) => {
     process.stdout.write(`\n>>> ${message}\n>>> Нажмите ENTER в этой консоли, когда закончите...\n`);
-    let timer;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const onData = () => {
       process.stdin.removeListener('data', onData);
       process.stdin.pause();
@@ -225,30 +277,35 @@ async function loginFlow() {
   await new Promise(() => {}); // бесконечное ожидание — браузер жив, пока не закроют.
 }
 
-async function loadQueue(userId?: string): Promise<any[]> {
+async function loadQueue(userId?: string): Promise<QueueEntry[]> {
   await connect();
-  const filter: any = { status: 'queued' };
+  const filter: { status: string; userId?: string } = { status: 'queued' };
   if (userId) filter.userId = userId;
-  return dbInstance().collection('apply_queue').find(filter).sort({ addedAt: 1 }).toArray();
+  const docs = await dbInstance().collection<ApplyQueueDoc>('apply_queue').find(filter).sort({ addedAt: 1 }).toArray();
+  // Единый формат: id — из vacancyId (или id), url обязателен для applyToVacancy.
+  return docs.map(d => ({ ...d, id: String(d.vacancyId || d.id || ''), url: d.url || '' }));
 }
 
 async function updateQueueItem(id: string, status: string, errorMessage?: string): Promise<void> {
-  const { ObjectId } = require('mongodb');
   await dbInstance().collection('apply_queue').updateOne(
     { _id: new ObjectId(id) },
     { $set: { status, errorMessage: errorMessage || null, processedAt: new Date(), updatedAt: new Date() } },
   );
 }
 
-async function apply(opts: Record<string, any> = {}) {
+async function apply(opts: ApplyCliOpts = {}) {
   if (opts.login) {
     await loginFlow();
+    return;
+  }
+  if (opts.worker) {
+    await runApplyWorker(opts);
     return;
   }
 
   ensureProfile();
 
-  let entries: any[];
+  let entries: QueueEntry[];
   if (opts.queue) {
     entries = await loadQueue(opts.user);
     log.info(`${entries.length} items in apply queue`);
@@ -281,7 +338,7 @@ async function apply(opts: Record<string, any> = {}) {
   for (const entry of entries) {
     // Determine the vacancy ID — queue items use 'vacancyId', digest entries use 'id'
     const vid = entry.vacancyId || entry.id;
-    const queueId = opts.queue ? entry._id?.toHexString?.() || entry._id : null;
+    const queueId = opts.queue && entry._id ? entry._id.toHexString() : null;
 
     const state = await history.load(opts.user);
     const rec = state.applied[vid];
@@ -306,8 +363,8 @@ async function apply(opts: Record<string, any> = {}) {
         if (opts.queue && queueId) await updateQueueItem(queueId, 'failed', res.reason);
         fail++;
       }
-    } catch (err) {
-      log.warn(`Apply failed for ${entry.id}: ${err.message}`);
+    } catch (err: unknown) {
+      log.warn(`Apply failed for ${entry.id}: ${errMsg(err)}`);
       fail++;
     }
     await sleep(rand(MIN_DELAY, MAX_DELAY));
@@ -315,6 +372,132 @@ async function apply(opts: Record<string, any> = {}) {
 
   log.info(`Done. ok=${ok}, fail=${fail}`);
   await ctx.close();
+}
+
+// Тип джобы ApplyJobData и имя очереди APPLY_QUEUE — в packages/shared,
+// единый источник правды для backend и CLI.
+
+// Воркер BullMQ-очереди 'apply' (имя очереди совпадает с backend).
+// Backend кладёт джобы (фронт → /api/apply-queue), воркер слушает ту же очередь
+// и выполняет отклик через Playwright. Статусы пишутся в базу backend'а
+// (web-autohh, MONGODB_WEB_URI), а не в autohh.
+async function runApplyWorker(opts: ApplyCliOpts = {}) {
+  const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+  await connectQueueDb(); // web-autohh — статусы apply_queue
+  await connect(); // autohh — история (дедуп)
+
+  let ctx: BrowserContext | null = null;
+  let page: Page | null = null;
+  let loginChecked = false;
+
+  const ensureBrowser = async (): Promise<Page> => {
+    if (ctx && page) return page;
+    ensureProfile();
+    ctx = await chromium.launchPersistentContext(PROFILE, {
+      headless: HEADLESS,
+      viewport: { width: 1280, height: 800 },
+    });
+    page = ctx.pages()[0] || await ctx.newPage();
+    return page;
+  };
+
+  const ensureLoggedIn = async (): Promise<boolean> => {
+    if (loginChecked) return true;
+    if (!page) return false;
+    await page.goto('https://hh.ru/applicant/resumes', { waitUntil: 'domcontentloaded' });
+    loginChecked = true;
+    if (/\/account\/login/.test(page.url())) {
+      log.error('Not logged in on hh.ru. Run `auto-hh apply --login` first, then restart the worker.');
+      return false;
+    }
+    return true;
+  };
+
+  const updateQueueStatus = async (id: string, status: string, errorMessage?: string) => {
+    await queueDbInstance().collection('apply_queue').updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { status, errorMessage: errorMessage || null, processedAt: new Date(), updatedAt: new Date() } },
+    );
+  };
+
+  const worker = new Worker(APPLY_QUEUE, async (job) => {
+    const data = job.data as ApplyJobData;
+    const queueId = data.queueId;
+    const userId = data.userId;
+    log.info(`Received job: ${data.vacancyId} (${data.title || data.employer || '?'})`);
+
+    // Дедуп по локальной истории (как в батч-режиме).
+    const state = await history.load(userId);
+    const rec = state.applied[data.vacancyId];
+    if (rec && !rec.digestOnly) {
+      log.info(`Skip ${data.vacancyId}: already applied`);
+      await updateQueueStatus(queueId, 'skipped', 'already applied');
+      return { ok: true, note: 'already applied' };
+    }
+
+    const pw = await ensureBrowser();
+    if (!(await ensureLoggedIn())) {
+      await updateQueueStatus(queueId, 'failed', 'not logged in');
+      return { ok: false, reason: 'not logged in' };
+    }
+
+    await updateQueueStatus(queueId, 'processing');
+    const entry: ApplyEntry = {
+      id: data.vacancyId,
+      url: data.url,
+      title: data.title || data.vacancyId,
+      employer: data.employer || '?',
+      coverLetter: data.coverLetter || null,
+    };
+
+    try {
+      const res = await applyToVacancy(pw, entry);
+      if (res.ok) {
+        await history.markApplied(data.vacancyId, { via: 'bullmq-worker', url: data.url }, userId);
+        await updateQueueStatus(queueId, 'success');
+        return { ok: true };
+      }
+      await updateQueueStatus(queueId, 'failed', res.reason || 'apply failed');
+      return { ok: false, reason: res.reason || 'apply failed' };
+    } catch (err: unknown) {
+      const msg = errMsg(err);
+      log.warn(`Apply failed for ${data.vacancyId}: ${msg}`);
+      await updateQueueStatus(queueId, 'failed', msg);
+      return { ok: false, reason: msg };
+    }
+  }, { connection: { url: REDIS_URL }, concurrency: 1 });
+
+  worker.on('completed', (job) => {
+    log.info(`Job done: ${job.data?.vacancyId || '?'}`);
+  });
+  worker.on('failed', (job, err) => {
+    const data = (job?.data || {}) as Partial<ApplyJobData>;
+    log.error(`Job ${data.vacancyId || '?'} failed: ${err.message}`);
+    if (data.queueId) {
+      updateQueueStatus(data.queueId, 'failed', err.message).catch(() => {});
+    }
+  });
+  worker.on('error', (e) => log.error(`Worker error: ${e.message}`));
+
+  log.info('Apply worker started. Waiting for jobs on BullMQ queue "apply".');
+  log.info(`Redis: ${REDIS_URL}`);
+  log.info('Press Ctrl+C to stop.');
+
+  const shutdown = async () => {
+    log.info('Stopping worker...');
+    try { await worker.close(); } catch {}
+    try { if (ctx) await ctx.close(); } catch {}
+    try { await closeQueueDb(); } catch {}
+    try { await closeDb(); } catch {}
+    process.exit(0);
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+
+  // Держим процесс живым, пока воркер не закрыт.
+  await new Promise<void>((resolve) => {
+    worker.on('closed', resolve);
+  });
 }
 
 export default apply;

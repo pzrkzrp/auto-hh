@@ -21,5 +21,33 @@ services:
       - mongo
     restart: unless-stopped
 
+  redis:
+    # Используем стабильную версию Redis на основе Alpine (легкий образ)
+    image: redis:7.2-alpine
+    container_name: redis
+    restart: unless-stopped
+
+    # Пробрасываем стандартный порт наружу
+    ports:
+      - "6379:6379"
+
+    # Монтируем том для сохранения данных
+    volumes:
+      - redis_data:/data
+
+    # Задаем пароль и включаем AOF для сохранности данных [citation:1][citation:10]
+    command: >
+      redis-server
+      --requirepass your_strong_password_here
+      --appendonly yes
+
+    # Проверка, что сервер жив
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "your_strong_password_here", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 volumes:
   mongo-data:
+  redis_data:
+    driver: local

@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { SearchService } from './search.service';
+import { SearchConfig } from '@auto-hh/shared';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
@@ -12,9 +13,9 @@ export class SearchController {
   constructor(private searchService: SearchService) {}
 
   @Post('jobs')
-  @ApiOperation({ summary: 'Создать search-джобу (исполняется CLI)' })
-  createJob(@CurrentUser('id') userId: string) {
-    return this.searchService.createJob(userId);
+  @ApiOperation({ summary: 'Создать search-джобу (исполняется CLI-воркером auto-hh search --worker)' })
+  createJob(@CurrentUser('id') userId: string, @Body() body: { config?: SearchConfig }) {
+    return this.searchService.createJob(userId, body?.config);
   }
 
   @Get('jobs')

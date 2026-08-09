@@ -3,12 +3,14 @@ export interface Vacancy {
   name: string;
   description: string;
   key_skills?: { name: string }[];
-  salary?: { from?: number; to?: number; currency?: string };
-  employer?: { name?: string };
-  area?: { name: string, id: number };
-  experience?: { name?: string };
-  schedule?: { name?: string };
-  employment?: { name?: string };
+  // Поля hh.ru могут отсутствовать или быть null — поэтому nullable, а не только optional.
+  salary?: { from?: number; to?: number; currency?: string } | null;
+  employer?: { name?: string } | null;
+  area?: { name: string, id: number } | null;
+  experience?: { name?: string } | null;
+  schedule?: { name?: string } | null;
+  employment?: { name?: string } | null;
+  alternate_url?: string;
   [key: string]: unknown;
 }
 
@@ -48,7 +50,7 @@ export interface DigestEntry {
   area: string;
   salary: string;
   url: string;
-  score: number;
+  score: number | null; // null — когда Claude-судья не использовался
   reason: string | null;
   comment: string | null;
   coverLetter: string;

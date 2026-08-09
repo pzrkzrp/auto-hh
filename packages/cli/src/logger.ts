@@ -9,7 +9,7 @@ function ensureDir() {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
-function write(level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG', msg: string, meta?: any) {
+function write(level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG', msg: string, meta?: unknown) {
   ensureDir();
   const ts = new Date().toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', hour12: false }).replace(',', '');
   const line = `[${ts}] [${level}] ${msg}` +
@@ -18,9 +18,9 @@ function write(level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG', msg: string, meta?: a
   fs.appendFileSync(LOG_FILE, line + '\n');
 }
 
-const info = (m, meta?) => write('INFO', m, meta);
-const warn = (m, meta?) => write('WARN', m, meta);
-const error = (m, meta?) => write('ERROR', m, meta);
-const debug = (m, meta?) => process.env.DEBUG && write('DEBUG', m, meta);
+const info = (m: string, meta?: unknown) => write('INFO', m, meta);
+const warn = (m: string, meta?: unknown) => write('WARN', m, meta);
+const error = (m: string, meta?: unknown) => write('ERROR', m, meta);
+const debug = (m: string, meta?: unknown) => process.env.DEBUG && write('DEBUG', m, meta);
 
 export default { info, warn, error, debug };

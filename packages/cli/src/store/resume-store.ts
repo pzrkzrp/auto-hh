@@ -1,5 +1,6 @@
 // MongoDB-хранилище для коллекции resumes.
 import { connect, dbInstance } from "../clients/db";
+import { Document } from "mongodb";
 import type { Resume } from "../types.js";
 
 export interface ResumeDoc {
@@ -7,11 +8,12 @@ export interface ResumeDoc {
   name: string;
   filename: string;
   createdAt: Date;
+  userId?: string;
 }
 
 export async function listResumes(userId?: string): Promise<ResumeDoc[]> {
   await connect();
-  const filter: any = {};
+  const filter: Document = {};
   if (userId) filter.userId = userId;
   return dbInstance().collection<ResumeDoc>('resumes')
     .find(filter, { sort: { createdAt: -1 } })
@@ -20,14 +22,14 @@ export async function listResumes(userId?: string): Promise<ResumeDoc[]> {
 
 export async function findResume(resumeId: string, userId?: string): Promise<ResumeDoc | null> {
   await connect();
-  const filter: any = { resumeId };
+  const filter: Document = { resumeId };
   if (userId) filter.userId = userId;
   return dbInstance().collection<ResumeDoc>('resumes').findOne(filter);
 }
 
 export async function registerResume(resume: Resume, userId?: string): Promise<void> {
   await connect();
-  const doc: any = {
+  const doc: ResumeDoc = {
     resumeId: resume.id,
     name: resume.name,
     filename: resume.filename,

@@ -7,6 +7,7 @@
     "auto-hh": "./bin/auto-hh"
   },
   "scripts": {
+    "prebuild": "tsc -p ../shared/tsconfig.json",
     "start": "node bin/auto-hh search -r pavel",
     "apply": "node bin/auto-hh apply",
     "login": "node bin/auto-hh apply --login",
@@ -21,9 +22,11 @@
     "migrate:create": "migrate-mongo create"
   },
   "dependencies": {
+    "@auto-hh/shared": "1.0.0",
     "@anthropic-ai/sdk": "^0.96.0",
     "@types/node": "^25.7.0",
     "axios": "^1.7.7",
+    "bullmq": "^6.0.9",
     "commander": "^14.0.3",
     "dotenv": "^16.4.5",
     "migrate-mongo": "^14.0.7",

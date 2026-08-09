@@ -1,12 +1,23 @@
 // Логика отбора вакансий по критериям из config.filter.
 import {Vacancy} from "../types";
 
-function lower(s) { return (s || '').toString().toLowerCase(); }
+// Критерии фильтрации. Часть полей совпадает с SearchConfig.filter из @auto-hh/shared,
+// плюс CLI-локальные (minSalaryRub/locationRule).
+interface FilterConfig {
+  excludeArchived?: boolean;
+  excludedCompanies?: string[];
+  excludedKeywords?: string[];
+  minSalaryRub?: number;
+  locationRule?: boolean;
+}
+
+function lower(s: string | null | undefined): string { return (s || '').toLowerCase(); }
 
 const CAPITALS = new Set(['1', '2']); // hh: 1 = Москва, 2 = Санкт-Петербург
 
-function detectWorkFormat(vacancy) {
-  const fromField = (vacancy.work_format || []).map(s => String(s).toUpperCase());
+function detectWorkFormat(vacancy: Vacancy) {
+  const workFormats = (vacancy.work_format as string[] | undefined) || [];
+  const fromField = workFormats.map(s => String(s).toUpperCase());
   if (fromField.length) {
     return {
       remote: fromField.some(s => s.includes('REMOTE') || s.includes('УДАЛ')),
@@ -24,7 +35,7 @@ function detectWorkFormat(vacancy) {
   };
 }
 
-function vacancyMatchesFilter(vacancy: Vacancy, filter) : {ok: boolean, reason?: string} {
+function vacancyMatchesFilter(vacancy: Vacancy, filter: FilterConfig) : {ok: boolean, reason?: string} {
   if (!vacancy) return { ok: false, reason: 'no vacancy' };
 
   if (filter.excludeArchived && vacancy.archived) {

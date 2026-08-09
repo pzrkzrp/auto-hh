@@ -1,1 +1,1 @@
-export { judgeVacancy, judgeVacanciesBatch } from "./judge.js";
+export {  judgeVacanciesBatch } from "./judge.js";

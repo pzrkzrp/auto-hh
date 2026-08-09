@@ -2,6 +2,7 @@
 import cron from "node-cron";
 import {  loadConfig  } from "../config";
 import log from "../logger";
+import { errMsg } from "../utils/errors.js";
 import search from "./cmd-search.js";
 
 function getNextDate(expression: string): Date | null {
@@ -72,9 +73,10 @@ export default async function cmdSchedule() {
       await search({ claude: true });
       log.info("Scheduled search completed successfully");
       console.log(`✅ Search завершён (${new Date().toISOString()})`);
-    } catch (err: any) {
-      log.error(`Scheduled search failed: ${err.message}`);
-      console.error(`❌ Ошибка search:`, err.message);
+    } catch (err: unknown) {
+      const msg = errMsg(err);
+      log.error(`Scheduled search failed: ${msg}`);
+      console.error(`❌ Ошибка search:`, msg);
     }
 
     const next2 = getNextDate(expression);

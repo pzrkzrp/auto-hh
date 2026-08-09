@@ -1,6 +1,14 @@
 // Загрузка конфигурации из JSON и .env.
 import fs from "fs";
 import path from "path";
+import type { SearchConfig } from "@auto-hh/shared";
+
+// Конфигурация CLI из config.json. search/filter/apply/adaptResume повторяют
+// контракт SearchConfig из @auto-hh/shared (backend ↔ CLI), плюс локальные блоки.
+export interface Config extends SearchConfig {
+  api?: { apiKey?: string; baseUrl?: string };
+  schedule?: { cron?: string };
+}
 
 function resolveConfigPath(): string {
   // Явный путь из CONFIG_PATH (флаг -c) имеет приоритет.
@@ -11,13 +19,13 @@ function resolveConfigPath(): string {
   return path.join(__dirname, '..', 'config.json');
 }
 
-function loadConfig() {
+function loadConfig(): Config {
   const absPath = resolveConfigPath();
   if (!fs.existsSync(absPath)) {
     throw new Error(`Config not found: ${absPath}`);
   }
   const raw = fs.readFileSync(absPath, 'utf-8');
-  return JSON.parse(raw);
+  return JSON.parse(raw) as Config;
 }
 
 function env() {

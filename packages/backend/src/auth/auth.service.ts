@@ -1,21 +1,19 @@
-import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Db, ObjectId } from 'mongodb';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
+import { User } from './user.schema';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject('DATABASE_CONNECTION') private db: Db,
+    @InjectModel(User.name) private userModel: Model<User>,
     private jwtService: JwtService,
   ) {}
 
-  private get usersCol() {
-    return this.db.collection('users');
-  }
-
   async register(email: string, password: string, name: string) {
-    const existing = await this.usersCol.findOne({ email: email.toLowerCase() });
+    const existing = await this.userModel.findOne({ email: email.toLowerCase() }).lean().exec();
     if (existing) {
       throw new UnauthorizedException('Email already registered');
     }
@@ -31,8 +29,8 @@ export class AuthService {
       updatedAt: now,
     };
 
-    const result = await this.usersCol.insertOne(user as any);
-    const userId = result.insertedId.toHexString();
+    const created = await this.userModel.create(user);
+    const userId = created._id.toHexString();
 
     const tokens = this.generateTokens(userId);
     return {
@@ -42,7 +40,7 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await this.usersCol.findOne({ email: email.toLowerCase() });
+    const user = await this.userModel.findOne({ email: email.toLowerCase() }).lean().exec();
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -52,7 +50,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    await this.usersCol.updateOne(
+    await this.userModel.updateOne(
       { _id: user._id },
       { $set: { lastLoginAt: new Date() } },
     );
@@ -70,7 +68,7 @@ export class AuthService {
       const payload = this.jwtService.verify(refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'refresh-secret',
       });
-      const user = await this.usersCol.findOne({ _id: new ObjectId(payload.sub) } as any);
+      const user = await this.userModel.findById(payload.sub).lean().exec();
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
@@ -82,7 +80,7 @@ export class AuthService {
   }
 
   async validateUser(userId: string) {
-    const user = await this.usersCol.findOne({ _id: new ObjectId(userId) } as any);
+    const user = await this.userModel.findById(userId).lean().exec();
     if (!user) return null;
     return {
       id: user._id.toHexString(),

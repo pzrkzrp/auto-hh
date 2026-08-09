@@ -2,6 +2,7 @@ import { writeFileSync } from "fs";
 import { join } from "path";
 import log from "../logger.js";
 import { gradeResume } from "../domain/grade-resume.js";
+import type { GradeResult, GradeDetailedItem } from "../domain/grade-resume.js";
 
 function bar(score: number, max: number): string {
   const pct = Math.round((score / max) * 100);
@@ -10,9 +11,9 @@ function bar(score: number, max: number): string {
   return `${filled}${empty} ${score}/${max}`;
 }
 
-function buildMarkdown(result: Record<string, any>): string {
-  const cs = result.categoryScores || {};
-  const da = result.detailedAnalysis || [];
+function buildMarkdown(result: GradeResult): string {
+  const cs: NonNullable<GradeResult['categoryScores']> = result.categoryScores ?? {};
+  const da: GradeDetailedItem[] = result.detailedAnalysis ?? [];
   const lines: string[] = [];
 
   lines.push("# Проверка резюме");
@@ -83,14 +84,14 @@ function buildMarkdown(result: Record<string, any>): string {
   return lines.join("\n");
 }
 
-function formatGrade(result: Record<string, any>): void {
+function formatGrade(result: GradeResult | null): void {
   if (!result) {
     console.log("Оценка не получена (проверьте API-ключ и RESUME_PATH)");
     return;
   }
 
-  const cs = result.categoryScores || {};
-  const da = result.detailedAnalysis || [];
+  const cs: NonNullable<GradeResult['categoryScores']> = result.categoryScores ?? {};
+  const da: GradeDetailedItem[] = result.detailedAnalysis ?? [];
 
   console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
   console.log(`  ПРОВЕРКА РЕЗЮМЕ`);
@@ -155,7 +156,7 @@ function formatGrade(result: Record<string, any>): void {
   console.log();
 }
 
-async function cmdGradeResume(opts: Record<string, any> = {}) {
+async function cmdGradeResume(opts: { resume?: string } = {}) {
   const result = await gradeResume(undefined, opts.resume);
   formatGrade(result);
 

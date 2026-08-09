@@ -1,26 +1,28 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { Db, ObjectId } from 'mongodb';
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
 import * as fs from 'fs';
 import * as path from 'path';
 import { v5 as uuidv5 } from 'uuid';
+import { ResumeDoc } from './resume.schema';
+import { User } from '../auth/user.schema';
 
 const DNS_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 const RESUMES_DIR = path.resolve(process.env.RESUME_DIR || '../../data/resumes');
 
 @Injectable()
 export class ResumeService {
-  constructor(@Inject('DATABASE_CONNECTION') private db: Db) {}
-
-  private get col() {
-    return this.db.collection('resumes');
-  }
+  constructor(
+    @InjectModel(ResumeDoc.name) private resumeModel: Model<ResumeDoc>,
+    @InjectModel(User.name) private userModel: Model<User>,
+  ) {}
 
   private generateId(filename: string): string {
     return uuidv5(filename, DNS_NAMESPACE);
   }
 
   async listResumes(userId: string) {
-    return this.col.find({ userId }).sort({ createdAt: -1 }).toArray();
+    return this.resumeModel.find({ userId }).sort({ createdAt: -1 }).lean().exec();
   }
 
   async uploadResume(userId: string, file: Express.Multer.File, name?: string) {
@@ -41,9 +43,9 @@ export class ResumeService {
       createdAt: new Date(),
     };
 
-    await this.col.updateOne(
+    await this.resumeModel.updateOne(
       { resumeId, userId },
-      { $setOnInsert: doc as any },
+      { $setOnInsert: doc },
       { upsert: true },
     );
 
@@ -54,7 +56,7 @@ export class ResumeService {
     const objId = this.safeObjectId(id);
     const filter: any = { userId, $or: [{ resumeId: id }] };
     if (objId) (filter.$or as any[]).push({ _id: objId });
-    return this.col.findOne(filter);
+    return this.resumeModel.findOne(filter).lean().exec();
   }
 
   async deleteResume(userId: string, id: string) {
@@ -64,7 +66,7 @@ export class ResumeService {
     const filePath = path.join(RESUMES_DIR, doc.resumeId);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
-    await this.col.deleteOne({ _id: doc._id } as any);
+    await this.resumeModel.deleteOne({ _id: doc._id });
     return { ok: true };
   }
 
@@ -72,16 +74,16 @@ export class ResumeService {
     const doc = await this.getResumeById(userId, id);
     if (!doc) throw new Error('Resume not found');
 
-    await this.db.collection('users').updateOne(
-      { _id: new ObjectId(userId) } as any,
+    await this.userModel.updateOne(
+      { _id: userId },
       { $set: { activeResumeId: doc.resumeId } },
     );
     return { ok: true };
   }
 
-  private safeObjectId(id: string): ObjectId | null {
+  private safeObjectId(id: string): Types.ObjectId | null {
     try {
-      return new ObjectId(id);
+      return new Types.ObjectId(id);
     } catch {
       return null;
     }

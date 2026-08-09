@@ -1,14 +1,15 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { Db } from 'mongodb';
-import { UserConfig, SearchConfig, FilterConfig, ApplyConfig } from '../shared/types';
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { RedisCacheService } from '../common/redis/redis-cache.service';
+import { UserConfig } from './user-config.schema';
 
 @Injectable()
 export class ConfigService {
-  constructor(@Inject('DATABASE_CONNECTION') private db: Db) {}
-
-  private get col() {
-    return this.db.collection('user_configs');
-  }
+  constructor(
+    @InjectModel(UserConfig.name) private userConfigModel: Model<UserConfig>,
+    private readonly cache: RedisCacheService,
+  ) {}
 
   private defaultConfig = {
     search: {
@@ -36,20 +37,31 @@ export class ConfigService {
     adaptResume: true,
   };
 
+  private cacheKey(userId: string): string {
+    return `hh:config:${userId}`;
+  }
+
   async getConfig(userId: string): Promise<any> {
-    const doc = await this.col.findOne({ userId });
+    const key = this.cacheKey(userId);
+    const cached = await this.cache.get(key);
+    if (cached) return cached;
+
+    const doc = await this.userConfigModel.findOne({ userId }).lean().exec();
     if (!doc) {
       const newDoc = { userId, ...this.defaultConfig, updatedAt: new Date() };
-      await this.col.insertOne(newDoc as any);
+      await this.userConfigModel.create(newDoc);
+      await this.cache.set(key, newDoc, 60);
       return newDoc;
     }
+    await this.cache.set(key, doc, 60);
     return doc;
   }
 
   async updateConfig(userId: string, data: any): Promise<any> {
     const { userId: _, ...rest } = data;
     const set = { ...rest, updatedAt: new Date() };
-    await this.col.updateOne({ userId }, { $set: set }, { upsert: true });
+    await this.userConfigModel.updateOne({ userId }, { $set: set }, { upsert: true });
+    await this.cache.del(this.cacheKey(userId));
     return this.getConfig(userId);
   }
 
@@ -58,7 +70,8 @@ export class ConfigService {
   }
 
   async updateSearchConfig(userId: string, data: any): Promise<any> {
-    await this.col.updateOne({ userId }, { $set: { search: data, updatedAt: new Date() } }, { upsert: true });
+    await this.userConfigModel.updateOne({ userId }, { $set: { search: data, updatedAt: new Date() } }, { upsert: true });
+    await this.cache.del(this.cacheKey(userId));
     return (await this.getConfig(userId)).search;
   }
 
@@ -67,7 +80,8 @@ export class ConfigService {
   }
 
   async updateFilterConfig(userId: string, data: any): Promise<any> {
-    await this.col.updateOne({ userId }, { $set: { filter: data, updatedAt: new Date() } }, { upsert: true });
+    await this.userConfigModel.updateOne({ userId }, { $set: { filter: data, updatedAt: new Date() } }, { upsert: true });
+    await this.cache.del(this.cacheKey(userId));
     return (await this.getConfig(userId)).filter;
   }
 
@@ -76,7 +90,8 @@ export class ConfigService {
   }
 
   async updateApplyConfig(userId: string, data: any): Promise<any> {
-    await this.col.updateOne({ userId }, { $set: { apply: data, updatedAt: new Date() } }, { upsert: true });
+    await this.userConfigModel.updateOne({ userId }, { $set: { apply: data, updatedAt: new Date() } }, { upsert: true });
+    await this.cache.del(this.cacheKey(userId));
     return (await this.getConfig(userId)).apply;
   }
 }

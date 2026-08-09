@@ -1,25 +1,31 @@
 import OpenAI from "openai";
 import type { Resume } from "../types";
 
-let client: OpenAI | null = null;
-let lastConfig: any = null;
+// Локальный блок api из config.json — ключ и кастомный baseURL (например, DeepSeek).
+export interface ApiConfig {
+  apiKey?: string;
+  baseUrl?: string;
+}
 
-export function getClient(apiConfig?: any): OpenAI | null {
+let client: OpenAI | null = null;
+let lastConfig: ApiConfig | null = null;
+
+export function getClient(apiConfig?: ApiConfig): OpenAI | null {
   const cfg = apiConfig || {};
   if (client && lastConfig === apiConfig) return client;
 
   const key = cfg.apiKey || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY;
   if (!key) return null;
 
-  const opts: Record<string, any> = { apiKey: key, maxRetries: 3 };
+  const opts: ConstructorParameters<typeof OpenAI>[0] = { apiKey: key, maxRetries: 3 };
   if (cfg.baseUrl) opts.baseURL = cfg.baseUrl;
 
   client = new OpenAI(opts);
-  lastConfig = apiConfig;
+  lastConfig = apiConfig || null;
   return client;
 }
 
-export function buildResumeBlock(resume: Resume, adaptedText: string | null = null): { type: string; text: string } | null {
+export function buildResumeBlock(resume: Resume | null, adaptedText: string | null = null): { type: 'text'; text: string } | null {
   if (!resume) return null;
   if (adaptedText) {
     return { type: 'text', text: `=== РЕЗЮМЕ СОИСКАТЕЛЯ (адаптированное под вакансию) ===\n${adaptedText}` };

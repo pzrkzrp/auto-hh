@@ -1,6 +1,7 @@
 // Команда resume: управление резюме.
 import { listResumes, loadResume } from "../resume.js";
 import { registerResume, listResumes as listMongo } from "../store/resume-store";
+import { errMsg } from "../utils/errors.js";
 import type { Resume } from "../types.js";
 import log from "../logger.js";
 
@@ -43,8 +44,8 @@ async function cmdResumeShow(name?: string) {
   let resume: Resume | null;
   try {
     resume = name ? loadResume(name) : loadResume();
-  } catch (err: any) {
-    console.error(err.message);
+  } catch (err: unknown) {
+    console.error(errMsg(err));
     process.exit(1);
   }
   if (!resume) {
@@ -67,7 +68,7 @@ async function cmdResumeShow(name?: string) {
   console.log(resume.text);
 }
 
-export default async function cmdResume(opts: Record<string, any> = {}) {
+export default async function cmdResume(opts: { _?: string[] } = {}) {
   const sub = opts._?.join(' ') || 'list';
   if (sub.startsWith('register')) {
     const [, name] = sub.split(/\s+/);
