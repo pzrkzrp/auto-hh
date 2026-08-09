@@ -54,7 +54,7 @@ npm run migrate:up
 
 Запуск не требует компиляции — CLI исполняет TypeScript напрямую через `tsx`. Скрипт `npm run build` (`tsc`) нужен только если вы собираете чистый JS.
 
-> **Монорепозиторий (npm workspaces).** Проект — workspace с пакетами `packages/cli`, `packages/backend`, `packages/frontend`. Все команды из корня (`npm start`, `npm run apply`, …) делегируются в CLI; эквивалент напрямую — `npm run -w packages/cli <команда>`. CLI читает `config.json` и `.env` из своего каталога (`packages/cli/`), поэтому из корня запускайте через `npm run …`, а не `node bin/auto-hh`.
+> **Монорепозиторий (npm workspaces).** Проект — workspace с пакетами `../backend`, `../frontend` (сам CLI — этот каталог). Все команды из корня репозитория (`npm start`, `npm run apply`, …) делегируются в CLI; эквивалент напрямую — `npm run -w packages/cli <команда>`. CLI читает `config.json` и `.env` из своего каталога, поэтому из корня запускайте через `npm run …`, а не `node bin/auto-hh`.
 
 ---
 
@@ -64,7 +64,7 @@ npm run migrate:up
 
 ### Шаг 1 — положите файл резюме
 
-Создайте директорию `resumes/` в каталоге CLI (`packages/cli/resumes/`) и положите туда резюме (относительные пути в `.env` считаются от `packages/cli`):
+Создайте директорию `resumes/` в каталоге CLI (`./resumes/`) и положите туда резюме (относительные пути в `.env` считаются от этого каталога):
 
 ```
 resumes/pavel.md
@@ -382,7 +382,7 @@ npm run apply
 
 ## Замечания и отладка
 
-- **Селекторы hh.ru меняются** — если автоотклик перестал работать, смотрите `packages/cli/data/app.log` и обновите массивы `respondSelectors`, `submitSelectors` и т.п. в `packages/cli/src/apply-playwright.ts`.
+- **Селекторы hh.ru меняются** — если автоотклик перестал работать, смотрите `data/app.log` и обновите массивы `respondSelectors`, `submitSelectors` и т.п. в `src/apply-playwright.ts`.
 - **Тесты в вакансии.** По умолчанию (`PW_TEST_MODE=manual`) скрипт ставит окно браузера на передний план и ждёт ENTER в консоли — проходите тест вручную, отправляете отклик, затем ENTER → следующая вакансия. Режим `skip` пропускает такие вакансии. Ручной режим работает только при `PW_HEADLESS=false`.
 - **Ручное подтверждение отклика.** `apply` заполняет письмо, но не жмёт кнопку сам — вы нажимаете «Откликнуться» в браузере (защита от случайного). Таймаут ожидания — `PW_MANUAL_TIMEOUT_MS`.
 - **Лимит hh.ru** — ~200 откликов в день, не превышайте (задаётся `maxPerRun`).

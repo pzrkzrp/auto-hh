@@ -19,8 +19,8 @@
     "migrate:up": "npm run -w packages/cli migrate:up",
     "migrate:down": "npm run -w packages/cli migrate:down",
     "migrate:create": "npm run -w packages/cli migrate:create",
-    "backend": "npm run -w packages/backend",
-    "frontend": "npm run -w packages/frontend",
+    "backend:start:dev": "npm run -w packages/backend start:dev",
+    "frontend:start": "npm run -w packages/frontend start",
     "build:backend": "npm run -w packages/backend build",
     "build:frontend": "npm run -w packages/frontend build"
   }

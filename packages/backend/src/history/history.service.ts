@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { Inject } from '@nestjs/common';
-import { Db } from 'mongodb';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { History } from './history.schema';
 
 @Injectable()
 export class HistoryService {
-  constructor(@Inject('DATABASE_CONNECTION') private db: Db) {}
+  constructor(@InjectModel(History.name) private historyModel: Model<History>) {}
 
   async getHistory(userId: string, params: { status?: string; limit?: number; offset?: number } = {}) {
     const filter: any = { userId };
@@ -13,13 +14,8 @@ export class HistoryService {
     const offset = params.offset || 0;
 
     const [items, total] = await Promise.all([
-      this.db.collection('history')
-        .find(filter)
-        .sort({ at: -1 })
-        .skip(offset)
-        .limit(limit)
-        .toArray(),
-      this.db.collection('history').countDocuments(filter),
+      this.historyModel.find(filter).sort({ at: -1 }).skip(offset).limit(limit).exec(),
+      this.historyModel.countDocuments(filter).exec(),
     ]);
 
     return {
@@ -37,15 +33,15 @@ export class HistoryService {
 
   async getStats(userId: string) {
     const [appliedTotal, seenTotal] = await Promise.all([
-      this.db.collection('history').countDocuments({ userId, status: 'applied' }),
-      this.db.collection('history').countDocuments({ userId, status: 'seen' }),
+      this.historyModel.countDocuments({ userId, status: 'applied' }).exec(),
+      this.historyModel.countDocuments({ userId, status: 'seen' }).exec(),
     ]);
 
     const today = new Date().toISOString().slice(0, 10);
     const todayStart = new Date(today + 'T00:00:00.000Z');
     const [todayApplied, todaySeen] = await Promise.all([
-      this.db.collection('history').countDocuments({ userId, status: 'applied', at: { $gte: todayStart } }),
-      this.db.collection('history').countDocuments({ userId, status: 'seen', at: { $gte: todayStart } }),
+      this.historyModel.countDocuments({ userId, status: 'applied', at: { $gte: todayStart } }).exec(),
+      this.historyModel.countDocuments({ userId, status: 'seen', at: { $gte: todayStart } }).exec(),
     ]);
 
     return {
