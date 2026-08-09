@@ -1,4 +1,0 @@
-#!/usr/bin/env node
-require('dotenv').config();
-require('tsx/cjs');
-require('../src/cli/index').default.parse();

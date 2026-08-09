@@ -1,0 +1,8 @@
+#!/usr/bin/env node
+const path = require('path');
+// CLI — самодостаточный пакет: работаем из его корня, чтобы .env, config.json и
+// data/ (пути в .env относительные) находились независимо от места вызова.
+process.chdir(path.join(__dirname, '..'));
+require('dotenv').config();
+require('tsx/cjs');
+require('../src/cli/index').default.parse();

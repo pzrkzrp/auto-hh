@@ -1,4 +1,4 @@
-// Для обратной совместимости: `node src/apply-playwright.js` = `auto-hh apply`
+// Для обратной совместимости: `node packages/cli/src/apply-playwright.js` = `auto-hh apply`
 import apply from "./cli/cmd-apply.js";
 const args = {
   login: process.argv.includes('--login'),

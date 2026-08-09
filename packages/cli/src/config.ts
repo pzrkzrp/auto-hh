@@ -2,9 +2,17 @@
 import fs from "fs";
 import path from "path";
 
+function resolveConfigPath(): string {
+  // Явный путь из CONFIG_PATH (флаг -c) имеет приоритет.
+  if (process.env.CONFIG_PATH) return path.resolve(process.env.CONFIG_PATH);
+  // Иначе ищем config.json в текущей директории, а если нет — в корне пакета CLI.
+  const cwd = path.resolve('config.json');
+  if (fs.existsSync(cwd)) return cwd;
+  return path.join(__dirname, '..', 'config.json');
+}
+
 function loadConfig() {
-  const configPath = process.env.CONFIG_PATH || './config.json';
-  const absPath = path.resolve(configPath);
+  const absPath = resolveConfigPath();
   if (!fs.existsSync(absPath)) {
     throw new Error(`Config not found: ${absPath}`);
   }

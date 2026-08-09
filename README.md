@@ -37,9 +37,9 @@ apply ──Playwright──▶ браузер (сохранённая сесс�
 npm install
 npx playwright install chromium
 
-# 2. Конфигурация
-cp .env.example .env          # затем заполните .env (см. ниже)
-# config.json уже есть в репозитории — отредактируйте его под себя
+# 2. Конфигурация CLI (в каталоге пакета packages/cli)
+cp packages/cli/.env.example packages/cli/.env   # затем заполните .env (см. ниже)
+# packages/cli/config.json уже есть — отредактируйте его под себя
 
 # 3. MongoDB (опционально, если нет своего инстанса)
 docker compose up -d          # поднимет mongo + mongo-express (localhost:8081, admin/admin)
@@ -54,6 +54,8 @@ npm run migrate:up
 
 Запуск не требует компиляции — CLI исполняет TypeScript напрямую через `tsx`. Скрипт `npm run build` (`tsc`) нужен только если вы собираете чистый JS.
 
+> **Монорепозиторий (npm workspaces).** Проект — workspace с пакетами `packages/cli`, `packages/backend`, `packages/frontend`. Все команды из корня (`npm start`, `npm run apply`, …) делегируются в CLI; эквивалент напрямую — `npm run -w packages/cli <команда>`. CLI читает `config.json` и `.env` из своего каталога (`packages/cli/`), поэтому из корня запускайте через `npm run …`, а не `node bin/auto-hh`.
+
 ---
 
 ## Резюме
@@ -62,7 +64,7 @@ npm run migrate:up
 
 ### Шаг 1 — положите файл резюме
 
-Создайте директорию `resumes/` в корне проекта и положите туда резюме:
+Создайте директорию `resumes/` в каталоге CLI (`packages/cli/resumes/`) и положите туда резюме (относительные пути в `.env` считаются от `packages/cli`):
 
 ```
 resumes/pavel.md
@@ -120,7 +122,7 @@ npx auto-hh resume register pavel
 
 ```bash
 # 1. Войти на hh.ru — откроется браузер, залогиньтесь вручную и закройте его.
-#    Сессия сохранится в ./data/browser-profile
+#    Сессия сохранится в packages/cli/data/browser-profile
 npm run login
 
 # 2. Собрать дайджест: поиск → фильтр → ИИ-судья → сопроводительные
@@ -328,53 +330,59 @@ npm run apply
 
 ```
 .
-├─ bin/auto-hh                 # CLI entry point (tsx, запускается из любой команды)
-├─ config.json                 # поиск, фильтр, ИИ, расписание
-├─ .env                        # секреты и настройки (из .env.example)
-├─ resumes/                    # директория с резюме (если задан RESUMES_DIR)
-├─ src/
-│  ├─ cli/                     # команды Commander
-│  │  ├─ index.ts              # регистрация команд
-│  │  ├─ cmd-search.ts         # поиск, фильтр, судья, письма → дайджест
-│  │  ├─ cmd-apply.ts          # автоотклик через Playwright
-│  │  ├─ cmd-digest.ts         # показать дайджест
-│  │  ├─ cmd-history.ts        # показать историю
-│  │  ├─ cmd-config.ts         # показать конфиг
-│  │  ├─ cmd-reset.ts          # сброс истории/кэша/дайджестов
-│  │  ├─ cmd-cover.ts          # одно письмо по vacancyId
-│  │  ├─ cmd-schedule.ts       # планировщик (node-cron)
-│  │  ├─ cmd-grade-resume.ts   # оценка резюме
-│  │  └─ cmd-resume.ts         # управление резюме (list/register)
-│  ├─ clients/                 # внешние API-клиенты
-│  │  ├─ ai-client.ts          # единый OpenAI-совместимый клиент
-│  │  ├─ hh-client.ts          # поиск и карточки через API hh.ru
-│  │  └─ db.ts                 # MongoDB connection manager
-│  ├─ domain/                  # доменная логика
-│  │  ├─ judge/                # ИИ-судья (одиночный + батч)
-│  │  ├─ cover-letter/         # генерация сопроводительных
-│  │  ├─ filter.ts             # локальный пре-фильтр
-│  │  ├─ adapt-resume.ts       # адаптация резюме под вакансию
-│  │  └─ grade-resume.ts       # оценка резюме через ИИ
-│  ├─ store/                   # доступ к данным (MongoDB)
-│  │  ├─ cache-store.ts        # кэш (страницы, вердикты, письма)
-│  │  ├─ digest-store.ts       # дайджест в Markdown + MongoDB
-│  │  ├─ history-store.ts      # история просмотров/откликов
-│  │  ├─ resume-store.ts       # регистрация резюме в MongoDB
-│  │  └─ reset.ts              # сброс файлов и коллекций
-│  ├─ apply-playwright.ts      # Playwright-логика отклика (легаси-точка входа)
-│  ├─ resume.ts                # загрузка резюме (файл или директория)
-│  ├─ config.ts                # загрузка config.json + .env
-│  ├─ logger.ts / retry.ts / text-utils.ts / types.ts
-├─ migrations/                 # миграции MongoDB
-├─ packages/                   # веб-бэкенд (NestJS) + фронтенд (Angular)
-└─ docker-compose.yml          # MongoDB + mongo-express
+├─ package.json                 # корень npm-workspace (packages/*)
+├─ docker-compose.yml           # MongoDB + mongo-express
+├─ packages/                    # монорепозиторий (npm workspaces)
+│  ├─ cli/                      # CLI: поиск, судья, письма, отклик
+│  │  ├─ bin/auto-hh            # CLI entry point (tsx, запускается из любой команды)
+│  │  ├─ package.json           # зависимости и команды CLI
+│  │  ├─ config.json            # поиск, фильтр, ИИ, расписание
+│  │  ├─ .env                   # секреты и настройки (из .env.example)
+│  │  ├─ src/
+│  │  │  ├─ cli/                # команды Commander
+│  │  │  │  ├─ index.ts         # регистрация команд
+│  │  │  │  ├─ cmd-search.ts    # поиск, фильтр, судья, письма → дайджест
+│  │  │  │  ├─ cmd-apply.ts     # автоотклик через Playwright
+│  │  │  │  ├─ cmd-digest.ts    # показать дайджест
+│  │  │  │  ├─ cmd-history.ts   # показать историю
+│  │  │  │  ├─ cmd-config.ts    # показать конфиг
+│  │  │  │  ├─ cmd-reset.ts     # сброс истории/кэша/дайджестов
+│  │  │  │  ├─ cmd-cover.ts     # одно письмо по vacancyId
+│  │  │  │  ├─ cmd-schedule.ts  # планировщик (node-cron)
+│  │  │  │  ├─ cmd-grade-resume.ts # оценка резюме
+│  │  │  │  └─ cmd-resume.ts    # управление резюме (list/register)
+│  │  │  ├─ clients/            # внешние API-клиенты
+│  │  │  │  ├─ ai-client.ts     # единый OpenAI-совместимый клиент
+│  │  │  │  ├─ hh-client.ts     # поиск и карточки через API hh.ru
+│  │  │  │  └─ db.ts            # MongoDB connection manager
+│  │  │  ├─ domain/             # доменная логика
+│  │  │  │  ├─ judge/           # ИИ-судья (одиночный + батч)
+│  │  │  │  ├─ cover-letter/    # генерация сопроводительных
+│  │  │  │  ├─ filter.ts        # локальный пре-фильтр
+│  │  │  │  ├─ adapt-resume.ts  # адаптация резюме под вакансию
+│  │  │  │  └─ grade-resume.ts  # оценка резюме через ИИ
+│  │  │  ├─ store/              # доступ к данным (MongoDB)
+│  │  │  │  ├─ cache-store.ts   # кэш (страницы, вердикты, письма)
+│  │  │  │  ├─ digest-store.ts  # дайджест в Markdown + MongoDB
+│  │  │  │  ├─ history-store.ts # история просмотров/откликов
+│  │  │  │  ├─ resume-store.ts  # регистрация резюме в MongoDB
+│  │  │  │  └─ reset.ts         # сброс файлов и коллекций
+│  │  │  ├─ apply-playwright.ts # Playwright-логика отклика (легаси-точка входа)
+│  │  │  ├─ resume.ts           # загрузка резюме (файл или директория)
+│  │  │  ├─ config.ts           # загрузка config.json + .env
+│  │  │  └─ logger.ts / retry.ts / text-utils.ts / types.ts
+│  │  ├─ data/                  # данные CLI: дайджесты, профиль браузера (gitignored)
+│  │  ├─ migrations/            # миграции MongoDB
+│  │  └─ scripts/               # вспомогательные скрипты
+│  ├─ backend/                  # веб-бэкенд (NestJS)
+│  └─ frontend/                 # фронтенд (Angular)
 ```
 
 ---
 
 ## Замечания и отладка
 
-- **Селекторы hh.ru меняются** — если автоотклик перестал работать, смотрите `data/app.log` и обновите массивы `respondSelectors`, `submitSelectors` и т.п. в `src/apply-playwright.ts`.
+- **Селекторы hh.ru меняются** — если автоотклик перестал работать, смотрите `packages/cli/data/app.log` и обновите массивы `respondSelectors`, `submitSelectors` и т.п. в `packages/cli/src/apply-playwright.ts`.
 - **Тесты в вакансии.** По умолчанию (`PW_TEST_MODE=manual`) скрипт ставит окно браузера на передний план и ждёт ENTER в консоли — проходите тест вручную, отправляете отклик, затем ENTER → следующая вакансия. Режим `skip` пропускает такие вакансии. Ручной режим работает только при `PW_HEADLESS=false`.
 - **Ручное подтверждение отклика.** `apply` заполняет письмо, но не жмёт кнопку сам — вы нажимаете «Откликнуться» в браузере (защита от случайного). Таймаут ожидания — `PW_MANUAL_TIMEOUT_MS`.
 - **Лимит hh.ru** — ~200 откликов в день, не превышайте (задаётся `maxPerRun`).
