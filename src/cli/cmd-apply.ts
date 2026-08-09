@@ -3,9 +3,9 @@ import fs from "fs";
 import path from "path";
 import {  chromium  } from "playwright";
 import log from "../logger";
-import history from "../history-store";
-import  {getDigestsByDate, getAllDigests} from "../digest-store";
-import {  connect, dbInstance  } from "../db";
+import history from "../store/history-store";
+import  {getDigestsByDate, getAllDigests} from "../store/digest-store";
+import {  connect, dbInstance  } from "../clients/db";
 
 const PROFILE = path.resolve(process.env.PW_USER_DATA_DIR || './data/browser-profile');
 const HEADLESS = String(process.env.PW_HEADLESS || 'false') === 'true';
