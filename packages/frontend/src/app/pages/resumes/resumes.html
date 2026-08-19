@@ -27,18 +27,13 @@
   } @else {
     <div class="resume-grid">
       @for (r of items(); track r.resumeId) {
-        <div class="resume-card" [class.active]="r.resumeId === activeResumeId()">
+        <div class="resume-card">
           <div class="resume-card-body">
             <h3>{{ r.name }}</h3>
             <p class="resume-filename">{{ r.filename }}</p>
             <p class="resume-date">{{ r.createdAt | date }}</p>
           </div>
           <div class="resume-card-actions">
-            @if (r.resumeId === activeResumeId()) {
-              <span class="active-badge">✓ Активно</span>
-            } @else {
-              <button class="btn-activate" (click)="activate(r.resumeId)">Активировать</button>
-            }
             <button class="btn-delete" (click)="remove(r.resumeId)">🗑️</button>
           </div>
         </div>

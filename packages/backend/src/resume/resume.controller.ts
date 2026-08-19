@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Put, Param, Body, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Put, Param, Body, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { ResumeService } from './resume.service';
@@ -26,10 +26,12 @@ export class ResumeController {
   uploadResume(
     @CurrentUser('id') userId: string,
     @UploadedFile() file: Express.Multer.File,
-    @Body('name') name?: string,
+    @Body('name') name: string,
   ) {
-    if (!file) throw new Error('File is required');
-    return this.resumeService.uploadResume(userId, file, name);
+    if (!file) throw new BadRequestException('File is required');
+    // Имя резюме задаёт пользователь при загрузке — без него не сохраняем.
+    if (!name || !name.trim()) throw new BadRequestException('Resume name is required');
+    return this.resumeService.uploadResume(userId, file, name.trim());
   }
 
   @Get(':id')
@@ -42,11 +44,5 @@ export class ResumeController {
   @ApiOperation({ summary: 'Удалить резюме' })
   deleteResume(@CurrentUser('id') userId: string, @Param('id') id: string) {
     return this.resumeService.deleteResume(userId, id);
-  }
-
-  @Put(':id/activate')
-  @ApiOperation({ summary: 'Сделать резюме активным' })
-  setActive(@CurrentUser('id') userId: string, @Param('id') id: string) {
-    return this.resumeService.setActive(userId, id);
   }
 }

@@ -3,9 +3,10 @@ import { HydratedDocument } from 'mongoose';
 
 export type ResumeDocDocument = HydratedDocument<ResumeDoc>;
 
-// Резюме пользователей. Документы пишет бэкенд (ResumeService) — upsert
-// с $setOnInsert по ключу { resumeId, userId }. Класс назван ResumeDoc,
-// чтобы не конфликтовать с интерфейсом Resume из shared/types.
+// Резюме пользователей. Документы пишет бэкенд (ResumeService) — каждый
+// аплоад создаёт новый документ (resumeId = случайный uuid, у одного и того
+// же originalname разные resumeId). Класс назван ResumeDoc, чтобы не
+// конфликтовать с интерфейсом Resume из shared/types.
 @Schema({ collection: 'resumes', versionKey: false })
 export class ResumeDoc {
   @Prop({ required: true })
@@ -25,5 +26,5 @@ export class ResumeDoc {
 }
 
 export const ResumeSchema = SchemaFactory.createForClass(ResumeDoc);
-// Уникальный ключ совпадает с фильтром upsert в ResumeService.uploadResume
+// Уникальный ключ: у одного юзера не бывает двух резюме с одинаковым resumeId.
 ResumeSchema.index({ resumeId: 1, userId: 1 }, { unique: true });

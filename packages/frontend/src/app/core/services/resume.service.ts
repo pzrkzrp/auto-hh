@@ -17,21 +17,13 @@ export class ResumeService {
     );
   }
 
-  uploadResume(file: File) {
+  uploadResume(file: File, name: string) {
     const form = new FormData();
     form.append('file', file);
+    form.append('name', name);
     return this.http.post<ResumeDoc>(this.apiUrl, form).pipe(
       catchError((err) => {
         console.error('[ResumeService] uploadResume failed:', err);
-        return throwError(() => err);
-      }),
-    );
-  }
-
-  activateResume(id: string) {
-    return this.http.put<ResumeDoc>(`${this.apiUrl}/${id}/activate`, {}).pipe(
-      catchError((err) => {
-        console.error('[ResumeService] activateResume failed:', err);
         return throwError(() => err);
       }),
     );

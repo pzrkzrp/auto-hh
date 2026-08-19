@@ -3,31 +3,32 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as fs from 'fs';
 import * as path from 'path';
-import { v5 as uuidv5 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import { ResumeDoc } from './resume.schema';
-import { User } from '../auth/user.schema';
 
-const DNS_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 const RESUMES_DIR = path.resolve(process.env.RESUME_DIR || '../../data/resumes');
 
 @Injectable()
 export class ResumeService {
   constructor(
     @InjectModel(ResumeDoc.name) private resumeModel: Model<ResumeDoc>,
-    @InjectModel(User.name) private userModel: Model<User>,
   ) {}
 
-  private generateId(filename: string): string {
-    return uuidv5(filename, DNS_NAMESPACE);
+  // Случайный uuid — загрузка одного и того же файла (одинаковый originalname)
+  // каждый раз создаёт новый документ резюме с уникальным resumeId.
+  private generateId(): string {
+    return uuidv4();
   }
 
   async listResumes(userId: string) {
     return this.resumeModel.find({ userId }).sort({ createdAt: -1 }).lean().exec();
   }
 
-  async uploadResume(userId: string, file: Express.Multer.File, name?: string) {
-    const resumeName = name || path.basename(file.originalname, path.extname(file.originalname));
-    const resumeId = this.generateId(file.originalname);
+  // name — обязательное название резюме, введённое пользователем при загрузке
+  // (валидируется в контроллере).
+  async uploadResume(userId: string, file: Express.Multer.File, name: string) {
+    const resumeName = name;
+    const resumeId = this.generateId();
 
     if (!fs.existsSync(RESUMES_DIR)) {
       fs.mkdirSync(RESUMES_DIR, { recursive: true });
@@ -42,13 +43,7 @@ export class ResumeService {
       userId,
       createdAt: new Date(),
     };
-
-    await this.resumeModel.updateOne(
-      { resumeId, userId },
-      { $setOnInsert: doc },
-      { upsert: true },
-    );
-
+    await this.resumeModel.create(doc);
     return doc;
   }
 
@@ -67,17 +62,6 @@ export class ResumeService {
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
     await this.resumeModel.deleteOne({ _id: doc._id });
-    return { ok: true };
-  }
-
-  async setActive(userId: string, id: string) {
-    const doc = await this.getResumeById(userId, id);
-    if (!doc) throw new Error('Resume not found');
-
-    await this.userModel.updateOne(
-      { _id: userId },
-      { $set: { activeResumeId: doc.resumeId } },
-    );
     return { ok: true };
   }
 

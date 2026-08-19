@@ -1,8 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { MatDialog } from '@angular/material/dialog';
 import { ResumeService } from '../../core/services/resume.service';
 import { ResumeDoc } from '../../core/models/types';
-import {AuthService} from '../../core/services/auth.service';
+import { ResumeNameDialogComponent } from './resume-name-dialog';
 
 @Component({
   selector: 'app-resumes',
@@ -15,15 +16,11 @@ export class ResumeListPageComponent implements OnInit {
   items = signal<ResumeDoc[]>([]);
   loading = signal(true);
   error = signal('');
-  activeResumeId = signal<string | undefined>(undefined);
 
   private resumeService = inject(ResumeService);
-  private authService = inject(AuthService);
+  private dialog = inject(MatDialog);
 
   ngOnInit() {
-    // Получаем активное резюме из текущего пользователя
-    const user = this.authService.currentUser$.getValue();
-    this.activeResumeId.set(user?.activeResumeId);
     this.load();
   }
 
@@ -42,31 +39,27 @@ export class ResumeListPageComponent implements OnInit {
     });
   }
 
-  activate(id: string) {
-    this.resumeService.activateResume(id).subscribe({
-      next: () => {
-        this.activeResumeId.set(id);
-        this.load();
-      },
-      error: (err) => {
-        this.error.set(err?.message || 'Ошибка активации');
-      },
-    });
-  }
-
   upload(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
 
-    this.resumeService.uploadResume(file).subscribe({
-      next: () => {
-        input.value = '';
-        this.load();
-      },
-      error: (err) => {
-        this.error.set(err?.message || 'Ошибка загрузки файла');
-      },
+    // Имя файла без расширения — подсказка по умолчанию, пользователь может его поправить.
+    const suggested = file.name.replace(/\.[^.]+$/, '') || 'Резюме';
+    const dialogRef = this.dialog.open(ResumeNameDialogComponent, {
+      width: '380px',
+      data: { suggestedName: suggested },
+    });
+
+    dialogRef.afterClosed().subscribe((name?: string) => {
+      input.value = '';
+      if (!name) return;
+      this.resumeService.uploadResume(file, name).subscribe({
+        next: () => this.load(),
+        error: (err) => {
+          this.error.set(err?.message || 'Ошибка загрузки файла');
+        },
+      });
     });
   }
 
