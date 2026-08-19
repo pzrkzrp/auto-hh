@@ -21,6 +21,12 @@
   </nav>
 
   <div class="footer">
+    <button
+      class="theme-toggle"
+      (click)="theme.toggle()"
+      [attr.aria-label]="theme.dark() ? 'Включить светлую тему' : 'Включить тёмную тему'"
+      [attr.title]="theme.dark() ? 'Светлая тема' : 'Тёмная тема'"
+    >{{ theme.dark() ? '☀️' : '🌙' }}</button>
     <div class="status">
       <span class="status-dot"></span>
       <span>в работе</span>
