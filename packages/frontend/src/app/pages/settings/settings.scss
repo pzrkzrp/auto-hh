@@ -41,6 +41,30 @@ mat-slide-toggle {
   color: rgba(0, 0, 0, 0.6);
 }
 
+.session-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.session-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.session-date {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
 .loading-container {
   display: flex;
   justify-content: center;

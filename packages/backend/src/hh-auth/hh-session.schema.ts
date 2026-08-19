@@ -12,6 +12,20 @@ export class HhSession {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
   userId: Types.ObjectId;
 
+  // Идентификатор hh-аккаунта — email или телефон, указанные при входе.
+  // У одного юзера может быть несколько аккаунтов и несколько сессий на аккаунт.
+  @Prop({ type: String, required: true })
+  accountId: string;
+
+  // Контакт входа, сохранённый явно: что именно было указано при логине —
+  // телефон или почта. accountId дублирует его как единый ключ аккаунта
+  // (email || phone), а здесь поля раздельные. Одно заполнено, второе = null.
+  @Prop({ type: String, default: null })
+  phone: string | null;
+
+  @Prop({ type: String, default: null })
+  email: string | null;
+
   @Prop({ type: String, required: true })
   storageState: string;
 
@@ -20,3 +34,6 @@ export class HhSession {
 }
 
 export const HhSessionSchema = SchemaFactory.createForClass(HhSession);
+
+// Выборка сессий юзера (status/check/remove). Не unique — сессий на аккаунт может быть несколько.
+HhSessionSchema.index({ userId: 1, accountId: 1 });

@@ -1,14 +1,16 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import  { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatIconModule } from '@angular/material/icon';
 
 import { form, required, email, pattern, minLength, applyWhen, FormRoot, FormField } from '@angular/forms/signals';
 
-import { SettingsService, HhLoginPayload } from '../../core/services/settings.service';
+import { SettingsService, HhLoginPayload, HhSessionInfo } from '../../core/services/settings.service';
 
 @Component({
   selector: 'app-settings',
@@ -20,30 +22,45 @@ import { SettingsService, HhLoginPayload } from '../../core/services/settings.se
     MatFormFieldModule,
     MatInputModule,
     MatSlideToggleModule,
+    MatIconModule,
     FormRoot,
     FormField,
+    DatePipe,
   ],
   templateUrl: './settings.html',
   styleUrls: ['./settings.scss'],
 })
-export class SettingsPageComponent {
+export class SettingsPageComponent implements OnInit {
   loginType = signal<'phone' | 'email'>('phone');
-  loginBySmsCode = signal<boolean>(false);
-  awaitingSmsCode = signal<boolean>(false);
+  loginByCode = signal<boolean>(false);
+  awaitingCode = signal<boolean>(false);
+  pendingAccountId = signal<string | null>(null);
+  sessions = signal<HhSessionInfo[]>([]);
   private settingsService = inject(SettingsService);
+
+  ngOnInit() {
+    this.loadSessions();
+  }
+
+  loadSessions() {
+    this.settingsService.getSessions().subscribe({
+      next: (res) => this.sessions.set(res.sessions),
+      error: (err) => console.error('[Settings] load sessions failed:', err),
+    });
+  }
 
   formGroup = form(
     signal({ phone: '', email: '', password: '', smsCode: '' }),
     (f) => {
       pattern(f.phone, /^[0-9]{10,15}$/);
       email(f.email);
-      // Пароль нужен только когда вход не по коду из смс.
-      applyWhen(f.password, () => !this.loginBySmsCode(), (field) => {
+      // Пароль нужен только когда вход не по коду.
+      applyWhen(f.password, () => !this.loginByCode(), (field) => {
         required(field);
         minLength(field, 6);
       });
       // Код обязателен на шаге подтверждения (4–8 цифр).
-      applyWhen(f.smsCode, () => this.awaitingSmsCode(), (field) => {
+      applyWhen(f.smsCode, () => this.awaitingCode(), (field) => {
         required(field);
         pattern(field, /^\d{4,8}$/);
       });
@@ -61,8 +78,8 @@ export class SettingsPageComponent {
       payload.email = email;
     }
 
-    if (this.loginBySmsCode()) {
-      payload.wait_sms_code = true;
+    if (this.loginByCode()) {
+      payload.wait_code = true;
     } else {
       payload.password = password;
     }
@@ -70,24 +87,42 @@ export class SettingsPageComponent {
     this.settingsService.login(payload).subscribe({
       next: (res) => {
         console.log('[Settings] HH login:', res);
+        if (res.accountId) this.pendingAccountId.set(res.accountId);
         if (res.waitSmsCode) {
-          this.awaitingSmsCode.set(true);
+          this.awaitingCode.set(true);
+        } else {
+          // Вход по паролю завершён — сессия сохранена, обновляем список.
+          this.awaitingCode.set(false);
+          this.formGroup().reset();
+          this.loadSessions();
         }
       },
       error: (err) => console.error('[Settings] HH login failed:', err),
     });
   }
 
-  submitSmsCode() {
+  submitCode() {
     const { smsCode } = this.formGroup().value();
-    this.settingsService.sendCode(smsCode).subscribe({
+    const accountId = this.pendingAccountId();
+    if (!accountId) return;
+    this.settingsService.sendCode(accountId, smsCode).subscribe({
       next: (res) => {
-        console.log('[Settings] SMS code:', res);
+        console.log('[Settings] Code:', res);
         if (res.success) {
-          this.awaitingSmsCode.set(false);
+          this.awaitingCode.set(false);
+          this.pendingAccountId.set(null);
+          this.formGroup().reset();
+          this.loadSessions();
         }
       },
       error: (err) => console.error('[Settings] SMS code failed:', err),
+    });
+  }
+
+  removeSession(id: string) {
+    this.settingsService.removeSession(id).subscribe({
+      next: () => this.loadSessions(),
+      error: (err) => console.error('[Settings] remove session failed:', err),
     });
   }
 }
