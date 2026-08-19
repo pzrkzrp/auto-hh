@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleController } from './schedule.controller';
 import { ScheduleService } from './schedule.service';
-import { UserConfig, UserConfigSchema } from '../config/user-config.schema';
+import { ConfigModule } from '../config/config.module';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: UserConfig.name, schema: UserConfigSchema }])],
+  imports: [ConfigModule],
   controllers: [ScheduleController],
   providers: [ScheduleService],
 })

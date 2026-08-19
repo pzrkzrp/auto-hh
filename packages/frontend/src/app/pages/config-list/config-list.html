@@ -1,0 +1,43 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Конфигурации</h1>
+    <a class="btn-primary" routerLink="/config/new">+ Добавить</a>
+  </div>
+
+  @if (error()) {
+    <div class="error-banner">
+      <span>⚠️</span>
+      <span>{{ error() }}</span>
+      <button class="btn-dismiss" (click)="error.set('')">×</button>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Загрузка...</p>
+    </div>
+  } @else if (!items().length) {
+    <div class="empty-state">
+      <span class="icon">🗂️</span>
+      <h3>Нет конфигов</h3>
+      <p>Создайте первый конфиг — профиль поиска, фильтров и откликов.</p>
+      <a class="btn-primary" routerLink="/config/new">Добавить конфиг</a>
+    </div>
+  } @else {
+    <div class="config-grid">
+      @for (c of items(); track c._id) {
+        <div class="config-card">
+          <div class="config-card-body">
+            <h3>{{ c.name }}</h3>
+            <p class="config-date">{{ c.updatedAt ? (c.updatedAt | date: 'short') : '—' }}</p>
+          </div>
+          <div class="config-card-actions">
+            <a class="btn-open" routerLink="/config/{{ c._id }}">Открыть</a>
+            <button class="btn-delete" (click)="remove(c._id)" title="Удалить">🗑️</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

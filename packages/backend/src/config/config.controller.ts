@@ -1,9 +1,12 @@
-import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ConfigService } from './config.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
+// Конфиги множественные: GET list / POST create / GET/PUT/DELETE :id /
+// PUT :id/{search,filter,apply,resume}. Роут GET list объявлен до GET :id,
+// чтобы не перехватываться параметрическим сегментом.
 @ApiTags('config')
 @ApiBearerAuth()
 @Controller('api/config')
@@ -11,51 +14,60 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 export class ConfigController {
   constructor(private configService: ConfigService) {}
 
-  @Get()
-  @ApiOperation({ summary: 'Получить полную конфигурацию' })
-  getConfig(@CurrentUser('id') userId: string) {
-    return this.configService.getConfig(userId);
+  @Get('list')
+  @ApiOperation({ summary: 'Список конфигов пользователя' })
+  listConfigs(@CurrentUser('id') userId: string) {
+    return this.configService.listConfigs(userId);
   }
 
-  @Put()
-  @ApiOperation({ summary: 'Обновить конфигурацию полностью' })
-  updateConfig(@CurrentUser('id') userId: string, @Body() body: any) {
-    return this.configService.updateConfig(userId, body);
+  @Post()
+  @ApiOperation({ summary: 'Создать конфиг (name обязателен)' })
+  createConfig(@CurrentUser('id') userId: string, @Body() body: any) {
+    if (!body?.name || !body.name.trim()) {
+      throw new BadRequestException('Config name is required');
+    }
+    return this.configService.createConfig(userId, body.name.trim());
   }
 
-  @Get('search')
-  @ApiOperation({ summary: 'Получить секцию поиска' })
-  getSearch(@CurrentUser('id') userId: string) {
-    return this.configService.getSearchConfig(userId);
+  @Get(':id')
+  @ApiOperation({ summary: 'Получить конфиг по id' })
+  getConfig(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.configService.getConfig(userId, id);
   }
 
-  @Put('search')
-  @ApiOperation({ summary: 'Обновить секцию поиска' })
-  updateSearch(@CurrentUser('id') userId: string, @Body() body: any) {
-    return this.configService.updateSearchConfig(userId, body);
+  @Put(':id')
+  @ApiOperation({ summary: 'Обновить конфиг полностью (включая name)' })
+  updateConfig(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() body: any) {
+    return this.configService.updateConfig(userId, id, body);
   }
 
-  @Get('filter')
-  @ApiOperation({ summary: 'Получить секцию фильтров' })
-  getFilter(@CurrentUser('id') userId: string) {
-    return this.configService.getFilterConfig(userId);
+  @Delete(':id')
+  @ApiOperation({ summary: 'Удалить конфиг' })
+  deleteConfig(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.configService.deleteConfig(userId, id);
   }
 
-  @Put('filter')
-  @ApiOperation({ summary: 'Обновить секцию фильтров' })
-  updateFilter(@CurrentUser('id') userId: string, @Body() body: any) {
-    return this.configService.updateFilterConfig(userId, body);
+  @Put(':id/search')
+  @ApiOperation({ summary: 'Обновить секцию поиска конфига' })
+  updateSearch(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() body: any) {
+    return this.configService.updateSearchConfig(userId, id, body);
   }
 
-  @Get('apply')
-  @ApiOperation({ summary: 'Получить секцию откликов' })
-  getApply(@CurrentUser('id') userId: string) {
-    return this.configService.getApplyConfig(userId);
+  @Put(':id/filter')
+  @ApiOperation({ summary: 'Обновить секцию фильтров конфига' })
+  updateFilter(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() body: any) {
+    return this.configService.updateFilterConfig(userId, id, body);
   }
 
-  @Put('apply')
-  @ApiOperation({ summary: 'Обновить секцию откликов' })
-  updateApply(@CurrentUser('id') userId: string, @Body() body: any) {
-    return this.configService.updateApplyConfig(userId, body);
+  @Put(':id/apply')
+  @ApiOperation({ summary: 'Обновить секцию откликов конфига' })
+  updateApply(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() body: any) {
+    return this.configService.updateApplyConfig(userId, id, body);
+  }
+
+  @Put(':id/resume')
+  @ApiOperation({ summary: 'Обновить резюме конфига (resumeId из коллекции resumes)' })
+  updateResume(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() body: any) {
+    return this.configService.updateResumeConfig(userId, id, body.resumeId);
   }
 }

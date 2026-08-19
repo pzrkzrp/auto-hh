@@ -58,7 +58,7 @@ export class AuthService {
     const userId = user._id.toHexString();
     const tokens = this.generateTokens(userId);
     return {
-      user: { id: userId, email: user.email, name: user.name, createdAt: user.createdAt, activeResumeId: user.activeResumeId },
+      user: { id: userId, email: user.email, name: user.name, createdAt: user.createdAt },
       ...tokens,
     };
   }

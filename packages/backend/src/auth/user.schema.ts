@@ -21,9 +21,6 @@ export class User {
   @Prop({ type: Object, default: {} })
   apiKeys: Record<string, string>;
 
-  @Prop({ type: String, default: null })
-  activeResumeId: string | null;
-
   @Prop({ type: Date, default: null })
   lastLoginAt: Date | null;
 

@@ -3,7 +3,6 @@ export interface User {
   email: string;
   name: string;
   createdAt: string;
-  activeResumeId?: string;
 }
 
 export interface AuthResponse {
@@ -28,6 +27,7 @@ export interface DigestEntry {
 export interface QueueItem {
   _id: string;
   userId: string;
+  resumeId?: string | null;
   vacancyId: string;
   title: string;
   employer: string;
@@ -50,12 +50,24 @@ export interface ResumeDoc {
   createdAt: string;
 }
 
-export interface UserConfig {
+// Конфиг для списка на /config.
+export interface ConfigSummary {
+  _id: string;
+  name: string;
+  updatedAt: string;
+}
+
+// Полный документ конфига (GET/PUT /api/config/:id).
+export interface ConfigDoc {
+  _id: string;
   userId: string;
+  name?: string;
   search: SearchConfig;
   filter: FilterConfig;
   apply: ApplyConfig;
   adaptResume: boolean;
+  resume: string | null;
+  schedule?: { cron?: string; enabled?: boolean };
   updatedAt: string;
 }
 

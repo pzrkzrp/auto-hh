@@ -1,0 +1,73 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>{{ isNew() ? 'Новый конфиг' : 'Конфигурация' }}</h1>
+    <a class="btn-back" routerLink="/config">← К списку</a>
+  </div>
+
+  @if (error()) {
+    <div class="error-state"><mat-icon>error</mat-icon><p>{{ error() }}</p></div>
+  }
+
+  @if (loading()) {
+    <div class="loading-container"><mat-spinner></mat-spinner></div>
+  } @else {
+    <form [formRoot]="nameForm" class="name-row" (submit)="isNew() ? createConfig() : saveName()">
+      <mat-form-field appearance="outline" class="name-field">
+        <mat-label>Имя конфига</mat-label>
+        <input matInput [formField]="nameForm.name" placeholder="Например, «Backend»" />
+      </mat-form-field>
+      @if (isNew()) {
+        <button mat-raised-button color="primary" type="submit" [disabled]="!nameForm().valid || creating()">Создать</button>
+      } @else {
+        <button mat-raised-button color="primary" type="submit" [disabled]="!nameForm().valid">Переименовать</button>
+      }
+    </form>
+
+    @if (!isNew()) {
+      <mat-tab-group>
+        <mat-tab label="Поиск">
+          <form [formRoot]="searchForm" class="config-form">
+            <mat-form-field appearance="outline"><mat-label>Запрос</mat-label><input matInput [formField]="searchForm.text" /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Страниц</mat-label><input matInput type="number" [formField]="searchForm.max_pages" /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>На странице</mat-label><input matInput type="number" [formField]="searchForm.per_page" /></mat-form-field>
+            <button mat-raised-button color="primary" (click)="saveSection('search', searchForm().value())">Сохранить</button>
+          </form>
+        </mat-tab>
+        <mat-tab label="Фильтр">
+          <form [formRoot]="filterForm" class="config-form">
+            <mat-form-field appearance="outline"><mat-label>Навыки (через запятую)</mat-label><input matInput [formField]="filterForm.requiredSkills" /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Исключённые слова</mat-label><input matInput [formField]="filterForm.excludedKeywords" /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Исключённые компании</mat-label><input matInput [formField]="filterForm.excludedCompanies" /></mat-form-field>
+            <mat-slide-toggle [formField]="filterForm.excludeArchived">Исключать архивные</mat-slide-toggle>
+            <button mat-raised-button color="primary" (click)="saveSection('filter', filterForm().value())">Сохранить</button>
+          </form>
+        </mat-tab>
+        <mat-tab label="Отклик">
+          <form [formRoot]="applyForm" class="config-form">
+            <mat-form-field appearance="outline"><mat-label>Макс. в дайджест</mat-label><input matInput type="number" [formField]="applyForm.maxPerRun" /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Мин. AI-score</mat-label><input matInput type="number" [formField]="applyForm.minClaudeScore" /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Шаблон письма</mat-label><textarea matInput [formField]="applyForm.coverLetterTemplate" rows="4"></textarea></mat-form-field>
+            <button mat-raised-button color="primary" (click)="saveSection('apply', applyForm().value())">Сохранить</button>
+          </form>
+        </mat-tab>
+        <mat-tab label="Резюме">
+          <div class="config-form">
+            @if (resumes().length === 0) {
+              <p class="hint">Нет загруженных резюме. Загрузите его на странице «Резюме».</p>
+            } @else {
+              <mat-form-field appearance="outline">
+                <mat-label>Резюме для откликов</mat-label>
+                <mat-select [value]="selectedResumeId()" (selectionChange)="selectedResumeId.set($event.value)">
+                  @for (r of resumes(); track r.resumeId) {
+                    <mat-option [value]="r.resumeId">{{ r.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <button mat-raised-button color="primary" (click)="saveResume()" [disabled]="!selectedResumeId()">Сохранить</button>
+            }
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    }
+  }
+</div>

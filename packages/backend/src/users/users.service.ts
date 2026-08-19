@@ -17,7 +17,6 @@ export class UsersService {
       email: user.email,
       name: user.name,
       hasApiKeys: !!(user.apiKeys?.openai || user.apiKeys?.anthropic),
-      activeResumeId: user.activeResumeId || null,
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt || null,
     };

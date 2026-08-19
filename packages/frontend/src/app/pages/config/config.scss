@@ -1,0 +1,64 @@
+.page-container {
+  max-width: 700px;
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+}
+
+.btn-back {
+  color: #1976d2;
+  text-decoration: none;
+  font-size: 0.9rem;
+
+  &:hover { text-decoration: underline; }
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+// Имя конфига + кнопка создания/переименования.
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  max-width: 600px;
+
+  .name-field { flex: 1; }
+}
+
+.error-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+// Раньше инлайн-стиль форм (padding/flex/gap). Вынесено в класс, чтобы
+// не дублировать style="..." в каждом form в шаблоне.
+.config-form {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 600px;
+}
