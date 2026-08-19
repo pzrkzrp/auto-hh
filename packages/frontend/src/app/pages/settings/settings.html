@@ -1,0 +1,50 @@
+<div class="page-container">
+    <mat-card class="settings-card">
+      <mat-card-header>
+        <mat-card-title>Добавить HH-аккаунт</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formRoot]="formGroup" class="form-column" (submit)="onSubmit($event)">
+          @if (awaitingSmsCode()) {
+            <span class="form-label">Введите код из смс</span>
+            <mat-form-field appearance="outline">
+              <mat-label>Код из смс</mat-label>
+              <input matInput placeholder="123456" [formField]="formGroup.smsCode" />
+            </mat-form-field>
+            <button mat-raised-button color="primary" type="button" (click)="submitSmsCode()" [disabled]="!formGroup().valid">Подтвердить</button>
+          } @else {
+            <span class="form-label">Вход по</span>
+            <mat-button-toggle-group [(value)]="loginType" name="type" [hideSingleSelectionIndicator]="true">
+              <mat-button-toggle value="phone">Телефон</mat-button-toggle>
+              <mat-button-toggle value="email">Почта</mat-button-toggle>
+            </mat-button-toggle-group>
+
+            @if (loginType() === 'phone') {
+              <mat-form-field appearance="outline">
+                <mat-label>Телефон</mat-label>
+                <input matInput placeholder="+7 900 000-00-00" [formField]="formGroup.phone" />
+              </mat-form-field>
+            } @else {
+              <mat-form-field appearance="outline">
+                <mat-label>Email</mat-label>
+                <input matInput placeholder="name@example.com" [formField]="formGroup.email" />
+              </mat-form-field>
+            }
+            <mat-slide-toggle
+              [checked]="loginBySmsCode()"
+              (change)="loginBySmsCode.set($event.checked)"
+            >
+              Вход по коду из смс
+            </mat-slide-toggle>
+            @if (loginBySmsCode() === false) {
+              <mat-form-field appearance="outline">
+                <mat-label>Пароль от HH</mat-label>
+                <input matInput type="password" [formField]="formGroup.password" />
+              </mat-form-field>
+            }
+            <button mat-raised-button color="primary" type="submit" [disabled]="!formGroup().valid">Добавить</button>
+          }
+        </form>
+      </mat-card-content>
+    </mat-card>
+</div>

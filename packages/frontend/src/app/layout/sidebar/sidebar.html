@@ -1,0 +1,30 @@
+<div class="sidebar">
+  <div class="brand">
+    <div class="brand-logo">🤖</div>
+    <div class="brand-text">
+      <h2>auto-hh</h2>
+      <span>HR-ассистент</span>
+    </div>
+  </div>
+
+  <nav class="nav">
+    @for (group of groups; track group.title) {
+      <div class="nav-group">
+        <div class="nav-group-title">{{ group.title }}</div>
+        <mat-nav-list>
+          @for (item of group.items; track item.link) {
+            <a mat-list-item [routerLink]="item.link" routerLinkActive="active-link" [attr.aria-label]="item.label"><span matListItemTitle><span class="item-label">{{ item.label }}</span></span></a>
+          }
+        </mat-nav-list>
+      </div>
+    }
+  </nav>
+
+  <div class="footer">
+    <div class="status">
+      <span class="status-dot"></span>
+      <span>в работе</span>
+    </div>
+    <span class="version">v1.0.0</span>
+  </div>
+</div>

@@ -1,0 +1,48 @@
+.page-container {
+  max-width: 600px;
+}
+
+.settings-card {
+  margin-bottom: 16px;
+}
+
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+mat-button-toggle-group {
+  width: 100%;
+
+  mat-button-toggle {
+    flex: 1;
+    transition: background-color 0.2s;
+
+    &.mat-button-toggle-checked {
+      background-color: #3f51b5;
+      color: #fff;
+      font-weight: 500;
+    }
+  }
+}
+
+mat-slide-toggle {
+  margin: 8px 0;
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}

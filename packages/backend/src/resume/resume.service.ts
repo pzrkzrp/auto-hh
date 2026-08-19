@@ -33,7 +33,7 @@ export class ResumeService {
       fs.mkdirSync(RESUMES_DIR, { recursive: true });
     }
     const filePath = path.join(RESUMES_DIR, resumeId);
-    fs.writeFileSync(filePath, file.buffer);
+    await fs.promises.writeFile(filePath, file.buffer);
 
     const doc = {
       resumeId,

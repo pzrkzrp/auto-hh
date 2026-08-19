@@ -1,5 +1,17 @@
 @use '@angular/material' as mat;
 
+// Тема Material (M3). Без неё компоненты рендерятся без токенов и выглядят неотёсанно.
+$theme: mat.define-theme((
+  color: (
+    theme-type: light,
+    primary: mat.$azure-palette,
+    tertiary: mat.$blue-palette,
+  ),
+));
+
+@include mat.core();
+@include mat.all-component-themes($theme);
+
 html, body { height: 100%; margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
 mat-sidenav-container { height: 100vh; }

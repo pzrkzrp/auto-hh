@@ -27,13 +27,6 @@ export class User {
   @Prop({ type: Date, default: null })
   lastLoginAt: Date | null;
 
-  // Зашифрованный storageState сессии hh.ru (HhAuthService, вход через Playwright)
-  @Prop({ type: String, default: null })
-  hhStorageState: string | null;
-
-  @Prop({ type: Date, default: null })
-  hhLoginAt: Date | null;
-
   @Prop({ type: Date })
   createdAt: Date;
 
