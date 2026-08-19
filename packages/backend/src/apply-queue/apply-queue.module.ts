@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { ApplyQueueController } from './apply-queue.controller';
 import { ApplyQueueService } from './apply-queue.service';
 import { ApplyQueueItem, ApplyQueueItemSchema } from './apply-queue.schema';
+import { ConfigModule } from '../config/config.module';
 
 // BullMQ-очередь 'apply' — общий канал между backend и CLI. Backend кладёт
 // джобы, CLI (auto-hh apply --worker) слушает ту же очередь и обрабатывает
@@ -13,6 +14,8 @@ import { ApplyQueueItem, ApplyQueueItemSchema } from './apply-queue.schema';
   imports: [
     MongooseModule.forFeature([{ name: ApplyQueueItem.name, schema: ApplyQueueItemSchema }]),
     BullModule.registerQueue({ name: 'apply' }),
+    // Резюме для откликов берётся из активного конфига (ConfigService).
+    ConfigModule,
   ],
   controllers: [ApplyQueueController],
   providers: [ApplyQueueService],

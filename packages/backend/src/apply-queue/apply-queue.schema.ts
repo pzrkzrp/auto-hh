@@ -13,6 +13,9 @@ export class ApplyQueueItem {
   @Prop({ required: true, index: true })
   userId: string;
 
+  @Prop({ type: String, default: null })
+  resumeId: string | null;
+
   @Prop({ required: true })
   vacancyId: string;
 

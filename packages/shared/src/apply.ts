@@ -9,6 +9,8 @@ export const APPLY_QUEUE = 'apply';
 export interface ApplyJobData {
   queueId: string;
   userId: string;
+  /** Резюме, которым откликаемся (resumeId из коллекции resumes / конфига юзера). */
+  resumeId: string | null;
   vacancyId: string;
   title: string;
   employer: string;

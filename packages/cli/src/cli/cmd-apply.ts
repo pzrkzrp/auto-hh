@@ -31,6 +31,10 @@ interface ApplyEntry {
   title?: string;
   employer?: string;
   coverLetter?: string | null;
+  // Резюме, которым откликаемся (resumeId из конфига юзера; пробрасывается
+  // из ApplyJobData). Пока информативно — выбор резюме в форме hh.ru
+  // автоматизируется отдельным шагом.
+  resumeId?: string | null;
 }
 
 // Запись в apply_queue (документы создаёт backend; CLI читает их в батч-режиме --queue).
@@ -82,6 +86,7 @@ async function loadDigest(type: string) {
 
 async function applyToVacancy(page: Page, entry: ApplyEntry) {
   log.info(`Applying to ${entry.id} (${entry.employer || '?'}: ${entry.title})`);
+  if (entry.resumeId) log.info(`Resume: ${entry.resumeId}`);
   const minDelay = parseInt(process.env.PW_MIN_DELAY_MS || '500', 10);
   const maxDelay = parseInt(process.env.PW_MAX_DELAY_MS || '2000', 10);
   await page.goto(entry.url, { waitUntil: 'domcontentloaded' });
@@ -424,7 +429,7 @@ async function runApplyWorker(opts: ApplyCliOpts = {}) {
     const data = job.data as ApplyJobData;
     const queueId = data.queueId;
     const userId = data.userId;
-    log.info(`Received job: ${data.vacancyId} (${data.title || data.employer || '?'})`);
+    log.info(`Received job: ${data.vacancyId} (${data.title || data.employer || '?'}) resume=${data.resumeId || '—'}`);
 
     // Дедуп по локальной истории (как в батч-режиме).
     const state = await history.load(userId);
@@ -448,6 +453,7 @@ async function runApplyWorker(opts: ApplyCliOpts = {}) {
       title: data.title || data.vacancyId,
       employer: data.employer || '?',
       coverLetter: data.coverLetter || null,
+      resumeId: data.resumeId || null,
     };
 
     try {

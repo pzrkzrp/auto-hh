@@ -5,6 +5,7 @@ import { Model, Types } from 'mongoose';
 import { Queue } from 'bullmq';
 import { APPLY_QUEUE, ApplyJobData } from '@auto-hh/shared';
 import { ApplyQueueItem, QueueStatus } from './apply-queue.schema';
+import { ConfigService } from '../config/config.service';
 
 export type { QueueStatus };
 // Типы контракта (ApplyJobData/APPLY_QUEUE) — в packages/shared,
@@ -17,6 +18,8 @@ export class ApplyQueueService {
   constructor(
     @InjectModel(ApplyQueueItem.name) private queueModel: Model<ApplyQueueItem>,
     @InjectQueue(APPLY_QUEUE) private applyQueue: Queue<ApplyJobData>,
+    // Резюме для откликов — из конфига по умолчанию (свежайшего у юзера).
+    private readonly configService: ConfigService,
   ) {}
 
   // Постановка джобы. Mongo-запись остаётся источником статусов для фронтенда и
@@ -26,6 +29,7 @@ export class ApplyQueueService {
     const payload: ApplyJobData = {
       queueId: item._id.toHexString(),
       userId: item.userId,
+      resumeId: item.resumeId ?? null,
       vacancyId: item.vacancyId,
       title: item.title,
       employer: item.employer,
@@ -66,9 +70,15 @@ export class ApplyQueueService {
     const now = new Date();
     const results: any[] = [];
 
+    // Резюме для откликов — из конфига по умолчанию (свежайшего у юзера).
+    const configId = await this.configService.getDefaultConfigId(userId);
+    const config = await this.configService.getConfig(userId, configId);
+    const resumeId = config?.resume ?? null;
+
     for (const item of items) {
       const doc = {
         userId,
+        resumeId,
         ...item,
         status: 'queued' as QueueStatus,
         errorMessage: null,
