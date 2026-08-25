@@ -11,7 +11,7 @@ export type UserConfigDocument = HydratedDocument<UserConfig>;
 // поэтому search/filter/apply/adaptResume необязательны — их может не быть вовсе.
 @Schema({ collection: 'user_configs', versionKey: false })
 export class UserConfig {
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   userId: string;
 
   // Имя конфига для списка (задаётся при создании/редактировании).
