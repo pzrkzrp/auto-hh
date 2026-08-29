@@ -1,12 +1,27 @@
 // Команда search: поиск, фильтр, Claude → дайджест.
-import path from "path";
 import { Worker } from "bullmq";
 import { ObjectId, Document } from "mongodb";
-import { SEARCH_QUEUE, SearchConfig, SearchJobPayload } from "@auto-hh/shared";
-import type { Vacancy, Resume, Verdict, DigestEntry } from "../types.js";
+import { SEARCH_QUEUE } from "@auto-hh/shared";
+import type { SearchConfig, SearchJobPayload } from "@auto-hh/shared";
+
+import type { DigestEntry, Resume, Vacancy, Verdict } from "../types.js";
 import type { CacheDoc } from "../store/cache-store.js";
+
 import HHClient from "../clients/hh-client";
-import {  loadConfig  } from "../config";
+import { connect, dbInstance, close as closeDb } from "../clients/db";
+import { connectQueueDb, queueDbInstance, closeQueueDb } from "../clients/queue-db";
+import { loadConfig } from "../config";
+import { vacancyMatchesFilter } from "../domain/filter.js";
+import { buildCoverLetter, buildCoverLettersBatch } from "../domain/cover-letter";
+import { judgeVacanciesBatch } from "../domain/judge";
+import log from "../logger.js";
+import { loadResume } from "../resume.js";
+import * as collectCache from "../store/cache-store.js";
+import { writeDigest, writeRejected } from "../store/digest-store";
+import history from "../store/history-store";
+import resetData from "../store/reset.js";
+import { registerResume } from "../store/resume-store.js";
+import { errMsg } from "../utils/errors.js";
 
 // cfg на входе пайплайна: SearchConfig (контракт backend↔CLI) + локальный блок api.
 type PipelineConfig = SearchConfig & { api?: { apiKey?: string } };
@@ -37,10 +52,10 @@ interface SearchCliOpts {
   claude?: boolean;
 }
 
-// Узкий предикат: значение — обычный (не-массивный) объект.
-function isRecord(x: unknown): x is Record<string, unknown> {
-  return x != null && typeof x === 'object' && !Array.isArray(x);
-}
+// Параметры пайплайна: подмножество CLI-опций + режим записи статусов/дайджеста.
+type PipelineOpts = Pick<SearchCliOpts, 'job' | 'user' | 'resume' | 'dryRun' | 'claude'> & {
+  useWebDb?: boolean; // true → статусы/дайджест в web-autohh (запуск из очереди)
+};
 
 // Кандидат после локального фильтра: полная вакансия + вердикт фильтра.
 interface Candidate {
@@ -66,19 +81,11 @@ interface RejectedItem {
   score: number | null;
   reason: string | null;
 }
-import history from "../store/history-store";
-import * as collectCache from "../store/cache-store.js";
-import {  vacancyMatchesFilter  } from "../domain/filter.js";
-import {  buildCoverLetter, buildCoverLettersBatch  } from "../domain/cover-letter";
-import {  loadResume  } from "../resume.js";
-import {  judgeVacanciesBatch  } from "../domain/judge";
-import {  writeDigest, writeRejected  } from "../store/digest-store";
-import resetData from "../store/reset.js";
-import { registerResume } from "../store/resume-store.js";
-import { connect, dbInstance, close as closeDb } from "../clients/db";
-import { connectQueueDb, queueDbInstance, closeQueueDb } from "../clients/queue-db";
-import log from "../logger.js";
-import { errMsg } from "../utils/errors.js";
+
+// Узкий предикат: значение — обычный (не-массивный) объект.
+function isRecord(x: unknown): x is Record<string, unknown> {
+  return x != null && typeof x === 'object' && !Array.isArray(x);
+}
 
 async function collectVacancies(client: HHClient, search: NonNullable<SearchConfig['search']>, cache: CacheDoc): Promise<Vacancy[]> {
   const results: Vacancy[] = [];
@@ -86,7 +93,7 @@ async function collectVacancies(client: HHClient, search: NonNullable<SearchConf
   const maxPages = search.max_pages || 1;
   for (let page = startPage; page < startPage + maxPages; page++) {
     // Страницу 0 всегда забираем свежей — на ней новые вакансии.
-    const cached = !page ? null : cache.pages[String(page)];
+    const cached = page === 0 ? null : cache.pages[String(page)];
     if (cached) {
       log.info(`Page ${page}: ${cached.length} vacancies (cached)`);
       results.push(...cached);
@@ -102,9 +109,9 @@ async function collectVacancies(client: HHClient, search: NonNullable<SearchConf
       currency: search.currency,
       per_page: search.per_page || 50,
       page,
+      schedule: search.schedule,
+      employment: search.employment,
     };
-    if (search.schedule) params.schedule = search.schedule;
-    if (search.employment) params.employment = search.employment;
 
     const data = await client.searchVacancies(params);
     log.info(`Page ${page}: ${data.items.length} vacancies (total ${data.found})`);
@@ -122,6 +129,18 @@ function fmtSalary(s: Vacancy['salary']) {
   if (s.from) parts.push(`от ${s.from}`);
   if (s.to) parts.push(`до ${s.to}`);
   return `${parts.join(' ') || '?'} ${s.currency || ''}`.trim();
+}
+
+// Общие поля строки дайджеста/отклонённых, которые заполняются из полной вакансии.
+function toRow(full: Vacancy): Omit<RejectedItem, 'score' | 'reason'> {
+  return {
+    id: String(full.id),
+    title: full.name,
+    employer: full.employer?.name || '—',
+    area: full.area?.name || '—',
+    salary: fmtSalary(full.salary),
+    url: full.alternate_url || `https://hh.ru/vacancy/${full.id}`,
+  };
 }
 
 async function filterLocally(client: HHClient, items: Vacancy[], cache: CacheDoc, cfg: SearchConfig): Promise<Candidate[]> {
@@ -211,7 +230,9 @@ function selectAccepted(candidates: Candidate[], judgements: Map<string, Verdict
   for (const { full, verdict } of candidates) {
     if (accepted.length >= maxRun) break;
 
-    let score: number | null = null, reason: string | null = null, comment: string | null = null;
+    let score: number | null = null;
+    let reason: string | null = null;
+    let comment: string | null = null;
 
     if (useClaude) {
       const judgement = judgements.get(String(full.id));
@@ -223,16 +244,7 @@ function selectAccepted(candidates: Candidate[], judgements: Map<string, Verdict
         comment = judgement.comment;
         if (!judgement.fit) {
           log.info(`Claude rejected ${full.id} (score=${score}): ${reason}`);
-          rejected.push({
-            id: String(full.id),
-            title: full.name,
-            employer: full.employer?.name || '—',
-            area: full.area?.name || '—',
-            salary: fmtSalary(full.salary),
-            url: full.alternate_url || `https://hh.ru/vacancy/${full.id}`,
-            score,
-            reason,
-          });
+          rejected.push({ ...toRow(full), score, reason });
           continue;
         }
         log.info(`Claude approved ${full.id} (score=${score}): ${comment || reason}`);
@@ -289,12 +301,7 @@ async function buildResults(accepted: AcceptedItem[], coverMap: Map<string, stri
     }
 
     matched.push({
-      id: String(full.id),
-      title: full.name,
-      employer: full.employer?.name || '—',
-      area: full.area?.name || '—',
-      salary: fmtSalary(full.salary),
-      url: full.alternate_url || `https://hh.ru/vacancy/${full.id}`,
+      ...toRow(full),
       score,
       reason,
       comment,
@@ -345,15 +352,6 @@ function mergeConfig<T>(base: T, override: unknown): T {
     else if (v !== undefined) out[k] = v;
   }
   return out as T;
-}
-
-interface PipelineOpts {
-  job?: string;       // Mongo _id search_jobs — для обновления статуса
-  user?: string;      // userId — метка в digest/rejected
-  resume?: string;    // путь к резюме (только ручной запуск)
-  dryRun?: boolean;
-  claude?: boolean;   // false → отключить Claude-судью
-  useWebDb?: boolean; // true → статусы/дайджест в web-autohh (запуск из очереди)
 }
 
 // cfg — SearchConfig из packages/shared (контракт backend↔CLI) плюс локальный блок api.

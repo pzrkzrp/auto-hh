@@ -187,7 +187,7 @@ html.dark-theme {
   .auth-container { background: #141414 !important; }
 
   // Страницы: карточки, подписи, кнопки-состояния
-  .resume-card, .config-card, .stat-card, .vacancy-card {
+  .resume-card, .config-card, .config-panel, .stat-card, .vacancy-card, .settings-card {
     background: #1e1e1e !important;
     border-color: #2e2e2e !important;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
@@ -196,7 +196,7 @@ html.dark-theme {
   .resume-filename, .resume-date, .config-date,
   .loading-container, .empty-state { color: rgba(255, 255, 255, 0.5) !important; }
   .resume-date, .config-date { color: rgba(255, 255, 255, 0.45) !important; }
-  .resume-card h3, .config-card h3 { color: rgba(255, 255, 255, 0.9) !important; }
+  .resume-card .resume-title, .config-card h3 { color: rgba(255, 255, 255, 0.9) !important; }
 
   .error-banner {
     background: rgba(198, 40, 40, 0.22) !important;
@@ -221,11 +221,82 @@ html.dark-theme {
   .spinner { border-color: #2e2e2e !important; }
 
   // Дашборд
-  .stat-card .stat-label, .vacancy-meta, .vacancy-company { color: rgba(255, 255, 255, 0.6) !important; }
+  .stat-card .stat-label, .vacancy-meta, .vacancy-company, .page-subtitle { color: rgba(255, 255, 255, 0.6) !important; }
   .stat-value, .vacancy-salary, .digest-title, .page-title { color: rgba(255, 255, 255, 0.9) !important; }
   .stat-card.accent .stat-value { color: #a5d6a7 !important; }
   .vacancy-title, .digest-link { color: #90caf9 !important; }
   .meta-dot { background: rgba(255, 255, 255, 0.3) !important; }
+
+  // Резюме: карточки (иконки типа файла, меню, кнопки действий)
+  .resume-icon.pdf  { background: rgba(220, 38, 38, 0.22) !important; mat-icon { color: #ef9a9a !important; } }
+  .resume-icon.docx { background: rgba(37, 99, 235, 0.22) !important; mat-icon { color: #90caf9 !important; } }
+  .resume-icon.txt, .resume-icon.other { background: rgba(255, 255, 255, 0.08) !important; mat-icon { color: #bdbdbd !important; } }
+  .resume-card-foot { border-top-color: rgba(255, 255, 255, 0.08) !important; }
+  .resume-menu { color: rgba(255, 255, 255, 0.5) !important; }
+  .resume-menu:hover { background: rgba(255, 255, 255, 0.08) !important; color: rgba(255, 255, 255, 0.85) !important; }
+  .resume-action.download { color: #90caf9 !important; &:hover { background: rgba(144, 202, 249, 0.15) !important; } }
+  .resume-action.delete { color: #ef9a9a !important; &:hover { background: rgba(239, 154, 154, 0.15) !important; } }
+
+  // Настройки: подключение hh.ru
+  .settings-card .card-title, .setting-name, .account-name { color: rgba(255, 255, 255, 0.9) !important; }
+  .setting-desc, .input-label, .hint { color: rgba(255, 255, 255, 0.6) !important; }
+  .heading-icon { color: #90caf9 !important; }
+  .input-field, .lang-select {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    &::placeholder { color: rgba(255, 255, 255, 0.4) !important; }
+  }
+  .lang-select-icon { color: rgba(255, 255, 255, 0.6) !important; }
+  .btn-ghost { color: rgba(255, 255, 255, 0.7) !important; &:hover { background: rgba(255, 255, 255, 0.08) !important; } }
+
+  // Настройки: аккаунты
+  .account-row {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    &.error { border-color: rgba(211, 47, 47, 0.4) !important; }
+  }
+  .account-avatar { background: rgba(70, 106, 235, 0.25) !important; color: #90caf9 !important; }
+  .account-avatar.error { background: rgba(186, 26, 26, 0.25) !important; color: #ef9a9a !important; }
+  .account-status { color: #a5d6a7 !important; .status-dot { background: #a5d6a7 !important; } }
+  .account-status.error { color: #ef9a9a !important; .status-dot { background: #ef9a9a !important; } }
+  .account-btn { color: rgba(255, 255, 255, 0.6) !important; &:hover { background: rgba(255, 255, 255, 0.08) !important; } }
+  .account-btn.danger { color: #ef9a9a !important; &:hover { background: rgba(239, 154, 154, 0.15) !important; } }
+  .account-login { color: #4dd0e1 !important; border-color: #4dd0e1 !important; &:hover { background: rgba(77, 208, 225, 0.12) !important; } }
+
+  // Настройки: приложение
+  .app-setting-row { border-bottom-color: rgba(255, 255, 255, 0.08) !important; }
+
+  // Конфиг: вкладки и конструктор запроса
+  .tab-bar { border-bottom-color: rgba(255, 255, 255, 0.08) !important; }
+  .tab { color: rgba(255, 255, 255, 0.7) !important; &:hover:not(.active) { color: rgba(255, 255, 255, 0.9) !important; } }
+  .tab.active { color: #90caf9 !important; border-bottom-color: #90caf9 !important; }
+  .launch-title, .chip-label { color: rgba(255, 255, 255, 0.6) !important; }
+  .chip-input-field {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+  }
+  .chip-input {
+    color: rgba(255, 255, 255, 0.9) !important;
+    &::placeholder { color: rgba(255, 255, 255, 0.4) !important; }
+  }
+  .chip-title      { background: rgba(70, 106, 235, 0.25) !important; color: #90caf9 !important; }
+  .chip-description{ background: rgba(0, 210, 253, 0.16) !important; color: #4dd0e1 !important; }
+  .chip-excluded   { background: rgba(211, 47, 47, 0.25) !important; color: #ef9a9a !important; }
+  .chip-close:hover { background: rgba(255, 255, 255, 0.12) !important; }
+  .preview-box {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    code { color: rgba(255, 255, 255, 0.9) !important; }
+  }
+  .preview-empty { color: rgba(255, 255, 255, 0.4) !important; }
+  .builder-actions { border-top-color: rgba(255, 255, 255, 0.08) !important; }
+  .btn-outline {
+    color: rgba(255, 255, 255, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    &:hover { background: rgba(255, 255, 255, 0.08) !important; }
+  }
+
   .score-badge {
     background: #2e2e2e !important;
     color: #bdbdbd !important;
@@ -234,8 +305,6 @@ html.dark-theme {
     &.low    { background: rgba(198, 40, 40, 0.25) !important; color: #ef9a9a !important; }
   }
 
-  // Настройки / конфиг / диалог
-  .form-label, .hint, .session-date { color: rgba(255, 255, 255, 0.6) !important; }
-  .session-row { border-bottom-color: rgba(255, 255, 255, 0.08) !important; }
+  // Конфиг / диалог
   .btn-back { color: #90caf9 !important; }
 }

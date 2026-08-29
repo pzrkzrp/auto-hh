@@ -1,6 +1,6 @@
-<div class="page-container">
+<div class="config-canvas">
   <div class="page-header">
-    <h1>{{ isNew() ? 'Новый конфиг' : 'Конфигурация' }}</h1>
+    <h1 class="page-title">{{ isNew() ? 'Новый конфиг' : 'Конфигурация' }}</h1>
     <a class="btn-back" routerLink="/config">← К списку</a>
   </div>
 
@@ -11,63 +11,191 @@
   @if (loading()) {
     <div class="loading-container"><mat-spinner></mat-spinner></div>
   } @else {
+    <!-- Имя конфига + создание/переименование -->
     <form [formRoot]="nameForm" class="name-row" (submit)="isNew() ? createConfig() : saveName()">
       <mat-form-field appearance="outline" class="name-field">
         <mat-label>Имя конфига</mat-label>
         <input matInput [formField]="nameForm.name" placeholder="Например, «Backend»" />
       </mat-form-field>
       @if (isNew()) {
-        <button mat-raised-button color="primary" type="submit" [disabled]="!nameForm().valid || creating()">Создать</button>
+        <button mat-raised-button color="primary" type="submit" [disabled]="!nameForm().valid() || creating()">Создать</button>
       } @else {
-        <button mat-raised-button color="primary" type="submit" [disabled]="!nameForm().valid">Переименовать</button>
+        <button mat-raised-button color="primary" type="submit" [disabled]="!nameForm().valid()">Переименовать</button>
       }
     </form>
 
     @if (!isNew()) {
-      <mat-tab-group>
-        <mat-tab label="Поиск">
-          <form [formRoot]="searchForm" class="config-form">
-            <mat-form-field appearance="outline"><mat-label>Запрос</mat-label><input matInput [formField]="searchForm.text" /></mat-form-field>
-            <mat-form-field appearance="outline"><mat-label>Страниц</mat-label><input matInput type="number" [formField]="searchForm.max_pages" /></mat-form-field>
-            <mat-form-field appearance="outline"><mat-label>На странице</mat-label><input matInput type="number" [formField]="searchForm.per_page" /></mat-form-field>
-            <button mat-raised-button color="primary" (click)="saveSection('search', searchForm().value())">Сохранить</button>
-          </form>
-        </mat-tab>
-        <mat-tab label="Фильтр">
-          <form [formRoot]="filterForm" class="config-form">
-            <mat-form-field appearance="outline"><mat-label>Навыки (через запятую)</mat-label><input matInput [formField]="filterForm.requiredSkills" /></mat-form-field>
-            <mat-form-field appearance="outline"><mat-label>Исключённые слова</mat-label><input matInput [formField]="filterForm.excludedKeywords" /></mat-form-field>
-            <mat-form-field appearance="outline"><mat-label>Исключённые компании</mat-label><input matInput [formField]="filterForm.excludedCompanies" /></mat-form-field>
-            <mat-slide-toggle [formField]="filterForm.excludeArchived">Исключать архивные</mat-slide-toggle>
-            <button mat-raised-button color="primary" (click)="saveSection('filter', filterForm().value())">Сохранить</button>
-          </form>
-        </mat-tab>
-        <mat-tab label="Отклик">
-          <form [formRoot]="applyForm" class="config-form">
-            <mat-form-field appearance="outline"><mat-label>Макс. в дайджест</mat-label><input matInput type="number" [formField]="applyForm.maxPerRun" /></mat-form-field>
-            <mat-form-field appearance="outline"><mat-label>Мин. AI-score</mat-label><input matInput type="number" [formField]="applyForm.minClaudeScore" /></mat-form-field>
-            <mat-form-field appearance="outline"><mat-label>Шаблон письма</mat-label><textarea matInput [formField]="applyForm.coverLetterTemplate" rows="4"></textarea></mat-form-field>
-            <button mat-raised-button color="primary" (click)="saveSection('apply', applyForm().value())">Сохранить</button>
-          </form>
-        </mat-tab>
-        <mat-tab label="Резюме">
-          <div class="config-form">
-            @if (resumes().length === 0) {
-              <p class="hint">Нет загруженных резюме. Загрузите его на странице «Резюме».</p>
-            } @else {
-              <mat-form-field appearance="outline">
-                <mat-label>Резюме для откликов</mat-label>
-                <mat-select [value]="selectedResumeId()" (selectionChange)="selectedResumeId.set($event.value)">
-                  @for (r of resumes(); track r.resumeId) {
-                    <mat-option [value]="r.resumeId">{{ r.name }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-              <button mat-raised-button color="primary" (click)="saveResume()" [disabled]="!selectedResumeId()">Сохранить</button>
-            }
+      <section class="config-panel">
+        <!-- Заголовок вкладок по дизайну -->
+        <div class="tab-bar">
+          <button
+            type="button"
+            class="tab"
+            [class.active]="activeTab() === 'launch'"
+            (click)="activeTab.set('launch')"
+          >Параметры запуска</button>
+          <button
+            type="button"
+            class="tab"
+            [class.active]="activeTab() === 'query'"
+            (click)="activeTab.set('query')"
+          >Конструктор запроса</button>
+        </div>
+
+        @if (activeTab() === 'launch') {
+          <!-- Параметры запуска: поиск / отклик / резюме -->
+          <div class="launch-pane">
+            <section class="launch-group">
+              <h3 class="launch-title">Поиск</h3>
+              <form [formRoot]="searchForm" class="launch-form">
+                <mat-form-field appearance="outline">
+                  <mat-label>Запрос hh.ru</mat-label>
+                  <input matInput [formField]="searchForm.text" />
+                </mat-form-field>
+                <div class="launch-grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Страниц</mat-label>
+                    <input matInput type="number" [formField]="searchForm.max_pages" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>На странице</mat-label>
+                    <input matInput type="number" [formField]="searchForm.per_page" />
+                  </mat-form-field>
+                </div>
+                <button mat-raised-button color="primary" (click)="saveSection('search', searchForm().value())">Сохранить</button>
+              </form>
+            </section>
+
+            <section class="launch-group">
+              <h3 class="launch-title">Отклик</h3>
+              <form [formRoot]="applyForm" class="launch-form">
+                <div class="launch-grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Макс. в дайджест</mat-label>
+                    <input matInput type="number" [formField]="applyForm.maxPerRun" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Мин. AI-score</mat-label>
+                    <input matInput type="number" [formField]="applyForm.minClaudeScore" />
+                  </mat-form-field>
+                </div>
+                <mat-form-field appearance="outline">
+                  <mat-label>Шаблон письма</mat-label>
+                  <textarea matInput [formField]="applyForm.coverLetterTemplate" rows="4"></textarea>
+                </mat-form-field>
+                <button mat-raised-button color="primary" (click)="saveSection('apply', applyForm().value())">Сохранить</button>
+              </form>
+            </section>
+
+            <section class="launch-group">
+              <h3 class="launch-title">Резюме</h3>
+              @if (resumes().length === 0) {
+                <p class="hint">Нет загруженных резюме. Загрузите его на странице «Резюме».</p>
+              } @else {
+                <mat-form-field appearance="outline" class="launch-full">
+                  <mat-label>Резюме для откликов</mat-label>
+                  <mat-select [value]="selectedResumeId()" (selectionChange)="selectedResumeId.set($event.value)">
+                    @for (r of resumes(); track r.resumeId) {
+                      <mat-option [value]="r.resumeId">{{ r.name }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <button mat-raised-button color="primary" (click)="saveResume()" [disabled]="!selectedResumeId()">Сохранить</button>
+              }
+            </section>
           </div>
-        </mat-tab>
-      </mat-tab-group>
+        } @else {
+          <!-- Конструктор запроса (по дизайну Figma) -->
+          <div class="builder-pane">
+            <div class="builder-grid">
+              <div class="chip-field">
+                <label class="chip-label">Ключевые слова в названии (OR)</label>
+                <div class="chip-input-field">
+                  @for (w of titleKeywords(); track w) {
+                    <span class="chip chip-title">{{ w }}<button type="button" class="chip-close" (click)="removeChip('title', $index)"><mat-icon>close</mat-icon></button></span>
+                  }
+                  <input
+                    class="chip-input"
+                    [value]="drafts().title"
+                    (input)="onDraftInput('title', $event)"
+                    (keydown.enter)="onDraftEnter('title', $event)"
+                    placeholder="Добавить слово..."
+                  />
+                </div>
+              </div>
+
+              <div class="chip-field">
+                <label class="chip-label">Ключевые слова в описании (OR)</label>
+                <div class="chip-input-field">
+                  @for (w of descriptionKeywords(); track w) {
+                    <span class="chip chip-description">{{ w }}<button type="button" class="chip-close" (click)="removeChip('description', $index)"><mat-icon>close</mat-icon></button></span>
+                  }
+                  <input
+                    class="chip-input"
+                    [value]="drafts().description"
+                    (input)="onDraftInput('description', $event)"
+                    (keydown.enter)="onDraftEnter('description', $event)"
+                    placeholder="Добавить слово..."
+                  />
+                </div>
+              </div>
+
+              <div class="chip-field">
+                <label class="chip-label">Исключить слова</label>
+                <div class="chip-input-field">
+                  @for (w of excludedWords(); track w) {
+                    <span class="chip chip-excluded">{{ w }}<button type="button" class="chip-close" (click)="removeChip('excludedWords', $index)"><mat-icon>close</mat-icon></button></span>
+                  }
+                  <input
+                    class="chip-input"
+                    [value]="drafts().excludedWords"
+                    (input)="onDraftInput('excludedWords', $event)"
+                    (keydown.enter)="onDraftEnter('excludedWords', $event)"
+                    placeholder="Добавить слово..."
+                  />
+                </div>
+              </div>
+
+              <div class="chip-field">
+                <label class="chip-label">Исключить компании</label>
+                <div class="chip-input-field chip-input-field-tall">
+                  @for (w of excludedCompanies(); track w) {
+                    <span class="chip chip-excluded">{{ w }}<button type="button" class="chip-close" (click)="removeChip('excludedCompanies', $index)"><mat-icon>close</mat-icon></button></span>
+                  }
+                  <input
+                    class="chip-input"
+                    [value]="drafts().excludedCompanies"
+                    (input)="onDraftInput('excludedCompanies', $event)"
+                    (keydown.enter)="onDraftEnter('excludedCompanies', $event)"
+                    placeholder="Добавить компанию..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Превью запроса hh.ru -->
+            <div class="preview-block">
+              <label class="chip-label">Предпросмотр запроса hh.ru</label>
+              <div class="preview-box">
+                @if (queryPreview()) {
+                  <code>{{ queryPreview() }}</code>
+                } @else {
+                  <span class="preview-empty">Добавьте ключевые слова, чтобы собрать запрос</span>
+                }
+              </div>
+            </div>
+
+            <!-- Действия -->
+            <div class="builder-actions">
+              <button type="button" class="btn-outline" (click)="resetBuilder()">Сбросить</button>
+              <button type="button" class="btn-save" (click)="saveBuilder()">
+                <mat-icon>save</mat-icon>
+                Сохранить запрос
+              </button>
+            </div>
+          </div>
+        }
+      </section>
     }
   }
 </div>

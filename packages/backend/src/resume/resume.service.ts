@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as fs from 'fs';
@@ -52,6 +52,17 @@ export class ResumeService {
     const filter: any = { userId, $or: [{ resumeId: id }] };
     if (objId) (filter.$or as any[]).push({ _id: objId });
     return this.resumeModel.findOne(filter).lean().exec();
+  }
+
+  // Поток файла резюме + исходное имя — для GET /api/resumes/:id/download.
+  async getResumeFile(userId: string, id: string) {
+    const doc = await this.getResumeById(userId, id);
+    if (!doc) throw new NotFoundException('Resume not found');
+
+    const filePath = path.join(RESUMES_DIR, doc.resumeId);
+    if (!fs.existsSync(filePath)) throw new NotFoundException('Resume file not found');
+
+    return { stream: fs.createReadStream(filePath), filename: doc.filename };
   }
 
   async deleteResume(userId: string, id: string) {

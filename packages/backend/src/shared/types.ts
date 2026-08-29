@@ -88,6 +88,8 @@ export interface SearchConfig {
 }
 
 export interface FilterConfig {
+  titleKeywords: string[];
+  descriptionKeywords: string[];
   requiredSkills: string[];
   excludedKeywords: string[];
   excludedCompanies: string[];

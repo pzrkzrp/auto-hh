@@ -37,4 +37,14 @@ export class ResumeService {
       }),
     );
   }
+
+  // Байты файла резюме — для кнопки «Скачать» на карточке.
+  downloadResume(id: string) {
+    return this.http.get(`${this.apiUrl}/${id}/download`, { responseType: 'blob' }).pipe(
+      catchError((err) => {
+        console.error('[ResumeService] downloadResume failed:', err);
+        return throwError(() => err);
+      }),
+    );
+  }
 }

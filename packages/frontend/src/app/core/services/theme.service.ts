@@ -14,8 +14,13 @@ export class ThemeService {
   }
 
   toggle() {
-    this.dark.set(!this.dark());
-    localStorage.setItem(THEME_KEY, this.dark() ? 'dark' : 'light');
+    this.setDark(!this.dark());
+  }
+
+  // Явная установка темы — для переключателя на странице настроек.
+  setDark(value: boolean) {
+    this.dark.set(value);
+    localStorage.setItem(THEME_KEY, value ? 'dark' : 'light');
     this.apply();
   }
 

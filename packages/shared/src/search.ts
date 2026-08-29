@@ -21,6 +21,11 @@ export interface SearchConfig {
     employment?: string | null;
   };
   filter?: {
+    // Ключевые слова конструктора запроса (вкладка «Конструктор запроса»):
+    // titleKeywords → NAME:(...), descriptionKeywords → DESCRIPTION:(...),
+    // excludedKeywords → NOT (...) в запросе + локальный фильтр, excludedCompanies — локальный фильтр.
+    titleKeywords?: string[];
+    descriptionKeywords?: string[];
     requiredSkills?: string[];
     excludedKeywords?: string[];
     excludedCompanies?: string[];

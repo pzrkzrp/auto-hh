@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Delete, Put, Param, Body, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Put, Param, Body, UseGuards, UseInterceptors, UploadedFile, BadRequestException, StreamableFile, Res } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { ResumeService } from './resume.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -38,6 +39,20 @@ export class ResumeController {
   @ApiOperation({ summary: 'Получить резюме по ID' })
   getResume(@CurrentUser('id') userId: string, @Param('id') id: string) {
     return this.resumeService.getResumeById(userId, id);
+  }
+
+  @Get(':id/download')
+  @ApiOperation({ summary: 'Скачать файл резюме' })
+  async downloadResume(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { stream, filename } = await this.resumeService.getResumeFile(userId, id);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    // filename* (RFC 5987) — чтобы неломать кириллические имена файлов.
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    return new StreamableFile(stream);
   }
 
   @Delete(':id')

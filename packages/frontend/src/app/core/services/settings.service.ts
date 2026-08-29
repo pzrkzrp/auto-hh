@@ -45,6 +45,11 @@ export class SettingsService {
     return this.http.get<HhStatusResult>(`${this.apiUrl}/status`);
   }
 
+  // Проверка, жива ли сохранённая сессия hh.ru (открывает headless-браузер).
+  checkSession(sessionId: string): Observable<{ valid: boolean }> {
+    return this.http.post<{ valid: boolean }>(`${this.apiUrl}/check`, { sessionId });
+  }
+
   removeSession(sessionId: string): Observable<{ ok: boolean }> {
     return this.http.delete<{ ok: boolean }>(`${this.apiUrl}`, { body: { sessionId } });
   }

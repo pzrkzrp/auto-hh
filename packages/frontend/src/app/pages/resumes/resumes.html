@@ -1,7 +1,13 @@
-<div class="page-container">
+<div class="resumes-canvas">
   <div class="page-header">
-    <h1>Резюме</h1>
-    <button class="btn-primary" (click)="fileInput.click()">Загрузить</button>
+    <div class="page-heading">
+      <h1 class="page-title">База резюме</h1>
+      <p class="page-subtitle">Управление загруженными профилями кандидатов</p>
+    </div>
+    <button class="btn-upload" (click)="fileInput.click()">
+      <mat-icon class="btn-upload-icon">upload</mat-icon>
+      <span>Загрузить резюме</span>
+    </button>
     <input #fileInput type="file" hidden (change)="upload($event)" accept=".md,.txt,.pdf" />
   </div>
 
@@ -23,18 +29,53 @@
       <span class="icon">📄</span>
       <h3>Нет резюме</h3>
       <p>Загрузите резюме в формате .md, .txt или .pdf</p>
+      <button class="btn-upload" (click)="fileInput.click()">Загрузить первое резюме</button>
     </div>
   } @else {
     <div class="resume-grid">
       @for (r of items(); track r.resumeId) {
         <div class="resume-card">
-          <div class="resume-card-body">
-            <h3>{{ r.name }}</h3>
-            <p class="resume-filename">{{ r.filename }}</p>
-            <p class="resume-date">{{ r.createdAt | date }}</p>
+          <div class="resume-card-head">
+            <div
+              class="resume-icon"
+              [class.pdf]="kind(r.filename) === 'pdf'"
+              [class.docx]="kind(r.filename) === 'docx'"
+              [class.txt]="kind(r.filename) === 'txt'"
+            >
+              <mat-icon>{{ kindIcon(kind(r.filename)) }}</mat-icon>
+            </div>
+            <div class="resume-card-main">
+              <div class="resume-title">{{ r.name }}</div>
+              <div class="resume-filename">{{ r.filename }}</div>
+            </div>
+            <button class="resume-menu" matTooltip="Действия" [attr.aria-label]="'Действия'">
+              <mat-icon>more_vert</mat-icon>
+            </button>
           </div>
-          <div class="resume-card-actions">
-            <button class="btn-delete" (click)="remove(r.resumeId)">🗑️</button>
+
+          <div class="resume-card-foot">
+            <div class="resume-date">
+              <mat-icon class="resume-date-icon">calendar_today</mat-icon>
+              <span>{{ formatDate(r.createdAt) }}</span>
+            </div>
+            <div class="resume-actions">
+              <button
+                class="resume-action download"
+                matTooltip="Скачать"
+                [attr.aria-label]="'Скачать резюме'"
+                (click)="download(r)"
+              >
+                <mat-icon>download</mat-icon>
+              </button>
+              <button
+                class="resume-action delete"
+                matTooltip="Удалить"
+                [attr.aria-label]="'Удалить резюме'"
+                (click)="remove(r.resumeId)"
+              >
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
           </div>
         </div>
       }

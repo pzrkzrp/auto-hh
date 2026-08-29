@@ -1,128 +1,151 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
-
-import { form, required, email, pattern, minLength, applyWhen, FormRoot, FormField } from '@angular/forms/signals';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { catchError, forkJoin, of } from 'rxjs';
+import { form, required, pattern, FormRoot, FormField } from '@angular/forms/signals';
 
 import { SettingsService, HhLoginPayload, HhSessionInfo } from '../../core/services/settings.service';
+import { ThemeService } from '../../core/services/theme.service';
+
+// Аккаунт + вычисленный статус сессии: valid=true — «Активен», false — «Ошибка
+// авторизации». Статус проверяется через check-эндпоинт (headless-браузер).
+type HhAccount = HhSessionInfo & { valid: boolean };
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [
-    MatCardModule,
-    MatButtonModule,
-    MatButtonToggleModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSlideToggleModule,
-    MatIconModule,
-    FormRoot,
-    FormField,
-    DatePipe,
-  ],
+  imports: [MatIconModule, MatTooltipModule, MatSlideToggleModule, FormRoot, FormField],
   templateUrl: './settings.html',
   styleUrls: ['./settings.scss'],
 })
 export class SettingsPageComponent implements OnInit {
-  loginType = signal<'phone' | 'email'>('phone');
-  loginByCode = signal<boolean>(false);
-  awaitingCode = signal<boolean>(false);
+  readonly theme = inject(ThemeService);
+
+  accounts = signal<HhAccount[]>([]);
+  loading = signal(true);
+  notice = signal('');
+
+  // Единое поле входа «Телефон или Email» (как в дизайне) — вход всегда по коду.
+  loginInput = signal({ login: '' });
+  loginForm = form(this.loginInput, (f) => required(f.login));
+
+  // Шаг подтверждения кодом из смс/почты.
+  awaitingCode = signal(false);
   pendingAccountId = signal<string | null>(null);
-  sessions = signal<HhSessionInfo[]>([]);
+  codeInput = signal({ code: '' });
+  codeForm = form(this.codeInput, (f) => {
+    required(f.code);
+    pattern(f.code, /^\d{4,8}$/);
+  });
+
   private settingsService = inject(SettingsService);
 
   ngOnInit() {
-    this.loadSessions();
+    this.loadAccounts();
   }
 
-  loadSessions() {
+  // Если значение содержит '@' — это почта, иначе телефон.
+  get loginType(): 'phone' | 'email' {
+    return this.loginForm().value().login.includes('@') ? 'email' : 'phone';
+  }
+
+  loadAccounts() {
+    this.loading.set(true);
     this.settingsService.getSessions().subscribe({
-      next: (res) => this.sessions.set(res.sessions),
-      error: (err) => console.error('[Settings] load sessions failed:', err),
+      next: (res) => {
+        const sessions = res.sessions;
+        // Сначала показываем все как активные, затем фоновые check-запросы
+        // уточняют реальный статус (каждая проверка — headless-браузер).
+        this.accounts.set(sessions.map((s) => ({ ...s, valid: true })));
+        this.loading.set(false);
+        if (!sessions.length) return;
+
+        forkJoin(
+          sessions.map((s) =>
+            this.settingsService.checkSession(s._id).pipe(catchError(() => of({ valid: true }))),
+          ),
+        ).subscribe((checks) => {
+          this.accounts.set(sessions.map((s, i) => ({ ...s, valid: checks[i].valid })));
+        });
+      },
+      error: (err) => {
+        console.error('[Settings] load sessions failed:', err);
+        this.notice.set('Не удалось загрузить подключённые аккаунты');
+        this.loading.set(false);
+      },
     });
   }
 
-  formGroup = form(
-    signal({ phone: '', email: '', password: '', smsCode: '' }),
-    (f) => {
-      pattern(f.phone, /^[0-9]{10,15}$/);
-      email(f.email);
-      // Пароль нужен только когда вход не по коду.
-      applyWhen(f.password, () => !this.loginByCode(), (field) => {
-        required(field);
-        minLength(field, 6);
-      });
-      // Код обязателен на шаге подтверждения (4–8 цифр).
-      applyWhen(f.smsCode, () => this.awaitingCode(), (field) => {
-        required(field);
-        pattern(field, /^\d{4,8}$/);
-      });
-    }
-  );
-
   onSubmit(event: Event) {
     event.preventDefault();
-    const { phone, email, password } = this.formGroup().value();
+    const login = this.loginForm().value().login.trim();
+    if (!login) return;
 
-    const payload: HhLoginPayload = {};
-    if (this.loginType() === 'phone') {
-      payload.phone = phone;
-    } else {
-      payload.email = email;
-    }
-
-    if (this.loginByCode()) {
-      payload.wait_code = true;
-    } else {
-      payload.password = password;
-    }
+    this.notice.set('');
+    const payload: HhLoginPayload = { wait_code: true };
+    if (login.includes('@')) payload.email = login;
+    else payload.phone = login;
 
     this.settingsService.login(payload).subscribe({
       next: (res) => {
-        console.log('[Settings] HH login:', res);
-        if (res.accountId) this.pendingAccountId.set(res.accountId);
-        if (res.waitSmsCode) {
+        if (res.waitSmsCode && res.accountId) {
+          this.pendingAccountId.set(res.accountId);
           this.awaitingCode.set(true);
-        } else {
-          // Вход по паролю завершён — сессия сохранена, обновляем список.
-          this.awaitingCode.set(false);
-          this.formGroup().reset();
-          this.loadSessions();
+        } else if (!res.success) {
+          this.notice.set(res.message);
         }
       },
-      error: (err) => console.error('[Settings] HH login failed:', err),
+      error: (err) => {
+        this.notice.set(err?.error?.message || err?.message || 'Не удалось отправить код');
+      },
     });
   }
 
   submitCode() {
-    const { smsCode } = this.formGroup().value();
+    const code = this.codeForm().value().code.trim();
     const accountId = this.pendingAccountId();
-    if (!accountId) return;
-    this.settingsService.sendCode(accountId, smsCode).subscribe({
+    if (!code || !accountId) return;
+
+    this.notice.set('');
+    this.settingsService.sendCode(accountId, code).subscribe({
       next: (res) => {
-        console.log('[Settings] Code:', res);
         if (res.success) {
           this.awaitingCode.set(false);
           this.pendingAccountId.set(null);
-          this.formGroup().reset();
-          this.loadSessions();
+          this.codeForm().reset();
+          this.loadAccounts();
+        } else {
+          this.notice.set(res.message);
         }
       },
-      error: (err) => console.error('[Settings] SMS code failed:', err),
+      error: (err) => {
+        this.notice.set(err?.error?.message || err?.message || 'Не удалось подтвердить код');
+      },
     });
   }
 
-  removeSession(id: string) {
+  cancelCode() {
+    this.awaitingCode.set(false);
+    this.pendingAccountId.set(null);
+    this.codeForm().reset();
+    this.loginForm().reset();
+  }
+
+  removeAccount(id: string) {
     this.settingsService.removeSession(id).subscribe({
-      next: () => this.loadSessions(),
-      error: (err) => console.error('[Settings] remove session failed:', err),
+      next: () => this.loadAccounts(),
+      error: (err) => this.notice.set(err?.error?.message || err?.message || 'Не удалось удалить аккаунт'),
     });
+  }
+
+  // Повторная авторизация / изменение аккаунта: подставляем телефон/почту в
+  // форму подключения и скроллим к ней. Старую сессию пользователь удаляет сам.
+  reconnect(account: HhAccount) {
+    this.loginInput.set({ login: account.phone || account.email || '' });
+    this.awaitingCode.set(false);
+    this.pendingAccountId.set(null);
+    this.notice.set('');
+    document.getElementById('connect-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }

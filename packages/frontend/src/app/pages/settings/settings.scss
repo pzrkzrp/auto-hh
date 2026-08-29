@@ -1,67 +1,365 @@
-.page-container {
-  max-width: 600px;
+.settings-canvas {
+  padding: 32px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
+/* ── Заголовок ─────────────────────────── */
+.page-title {
+  margin: 0 0 24px;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  color: #1b1b1c;
+}
+
+/* ── Error banner ──────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: #fce4ec;
+  border: 1px solid #ef9a9a;
+  border-radius: 8px;
+  color: #c62828;
+  font-size: 0.9rem;
+}
+
+.btn-dismiss {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: inherit;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+/* ── Секции-карточки ───────────────────── */
 .settings-card {
+  position: relative;
+  padding: 24px;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  background: #fcf9f8;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.card-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 16px;
 }
 
-.form-column {
+.heading-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+  line-height: 20px;
+  color: #264fd1;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 28px;
+  color: #1b1b1c;
+}
+
+/* Декоративный круг-акцент в углу карточки (как в Figma) */
+.heading-accent {
+  position: absolute;
+  top: -39px;
+  right: -39px;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: rgba(38, 79, 209, 0.05);
+  pointer-events: none;
+}
+
+/* ── Форма подключения hh.ru ───────────── */
+.connect-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.connect-input {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-.form-label {
+.input-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  line-height: 16px;
+  color: #444654;
+}
+
+.input-field {
+  height: 40px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  border: 1px solid #c4c5d7;
+  border-radius: 8px;
+  background: #fff;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.25px;
+  line-height: 20px;
+  color: #1b1b1c;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &::placeholder { color: #6b7280; }
+  &:focus {
+    outline: none;
+    border-color: #264fd1;
+    box-shadow: 0 0 0 3px rgba(38, 79, 209, 0.15);
+  }
+  &:disabled { background: #f3f4f6; color: rgba(0, 0, 0, 0.4); }
+}
+
+/* Пилюля «Получить код» / «Подтвердить» */
+.btn-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 9999px;
+  background: #264fd1;
+  color: #fff;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
   font-size: 14px;
   font-weight: 500;
-  color: rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.1px;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+
+  &:hover:not(:disabled) { background: #1f43b8; box-shadow: 0 2px 8px rgba(38, 79, 209, 0.3); }
+  &:active:not(:disabled) { transform: scale(0.98); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
-mat-button-toggle-group {
-  width: 100%;
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 12px;
+  border: none;
+  background: none;
+  border-radius: 9999px;
+  color: #444654;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
 
-  mat-button-toggle {
-    flex: 1;
-    transition: background-color 0.2s;
-
-    &.mat-button-toggle-checked {
-      background-color: #3f51b5;
-      color: #fff;
-      font-weight: 500;
-    }
-  }
+  &:hover { background: rgba(0, 0, 0, 0.06); }
 }
 
-mat-slide-toggle {
-  margin: 8px 0;
+/* ── Подключённые аккаунты ─────────────── */
+.account-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.hint {
-  color: rgba(0, 0, 0, 0.6);
-}
-
-.session-row {
+.account-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  gap: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #c4c5d7;
 
-  &:last-child {
-    border-bottom: none;
-  }
+  &.error { border-color: #ffdad6; }
 }
 
-.session-info {
+.account-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(70, 106, 235, 0.2);
+  color: #264fd1;
+
+  mat-icon { width: 20px; height: 20px; font-size: 20px; line-height: 20px; }
+
+  &.error { background: rgba(255, 218, 214, 0.2); color: #ba1a1a; }
+}
+
+.account-main {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.session-date {
+.account-name {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.15px;
+  line-height: 24px;
+  color: #1b1b1c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  line-height: 16px;
+  color: #2e7d32;
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2e7d32;
+  }
+
+  &.error { color: #d32f2f; .status-dot { background: #d32f2f; } }
+}
+
+.account-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: #747686;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  mat-icon { width: 20px; height: 20px; font-size: 20px; line-height: 20px; }
+
+  &:hover { background: rgba(0, 0, 0, 0.06); }
+
+  &.danger { color: #d32f2f; &:hover { background: rgba(211, 47, 47, 0.1); } }
+}
+
+/* Кнопка «Авторизоваться» у аккаунта с ошибкой */
+.account-login {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 16px;
+  border: 1px solid #00677e;
+  border-radius: 9999px;
+  background: none;
+  color: #00677e;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  line-height: 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+
+  &:hover { background: rgba(0, 103, 126, 0.08); }
+}
+
+/* ── Настройки приложения ──────────────── */
+.app-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e0e0e0;
+
+  &:first-of-type { padding-top: 8px; }
+  &:last-child { padding-bottom: 0; border-bottom: none; }
+}
+
+.setting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.setting-name {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.15px;
+  line-height: 24px;
+  color: #1b1b1c;
+}
+
+.setting-desc {
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.25px;
+  line-height: 20px;
+  color: #444654;
+}
+
+/* Выбор языка — визуально как в дизайне (i18n не реализовано) */
+.lang-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 8px 0 16px;
+  box-sizing: border-box;
+  border: 1px solid #c4c5d7;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: #1b1b1c;
+  white-space: nowrap;
+}
+
+.lang-select-icon {
+  width: 24px;
+  height: 24px;
+  font-size: 24px;
+  line-height: 24px;
+  color: #444654;
+}
+
+/* ── Состояния ─────────────────────────── */
+.hint {
   color: rgba(0, 0, 0, 0.6);
 }
 
@@ -69,4 +367,17 @@ mat-slide-toggle {
   display: flex;
   justify-content: center;
   padding: 24px;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e0e0e0;
+  border-top-color: #1976d2;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

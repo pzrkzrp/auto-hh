@@ -1,20 +1,25 @@
-.page-container {
-  max-width: 700px;
-  padding: 24px;
+.config-canvas {
+  padding: 32px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
+/* ── Заголовок ─────────────────────────── */
 .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+}
 
-  h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
-  }
+.page-title {
+  margin: 0;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  color: #1b1b1c;
 }
 
 .btn-back {
@@ -31,34 +36,300 @@
   padding: 24px;
 }
 
-// Имя конфига + кнопка создания/переименования.
-.name-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  max-width: 600px;
-
-  .name-field { flex: 1; }
-}
-
 .error-state {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: rgba(0, 0, 0, 0.6);
+  color: #d32f2f;
 }
 
 .hint {
   color: rgba(0, 0, 0, 0.6);
 }
 
-// Раньше инлайн-стиль форм (padding/flex/gap). Вынесено в класс, чтобы
-// не дублировать style="..." в каждом form в шаблоне.
-.config-form {
-  padding: 16px;
+/* Имя конфига + кнопка создания/переименования */
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  max-width: 600px;
+
+  .name-field { flex: 1; }
+}
+
+/* ── Панель (Section — Control Panel) ──── */
+.config-panel {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+}
+
+/* Вкладки: «Параметры запуска» / «Конструктор запроса» (как в Figma) */
+.tab-bar {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 24px;
+}
+
+.tab {
+  border: none;
+  background: none;
+  padding: 0 0 8px;
+  margin-bottom: -1px; /* чтобы синее подчёркивание легло на нижнюю границу */
+  border-bottom: 2px solid transparent;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: #444654;
+  cursor: pointer;
+  transition: color 0.15s ease;
+
+  &.active {
+    color: #264fd1;
+    border-bottom-color: #264fd1;
+  }
+
+  &:hover:not(.active) { color: #1b1b1c; }
+}
+
+/* ── Вкладка «Параметры запуска» ───────── */
+.launch-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.launch-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.launch-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #1b1b1c;
+}
+
+.launch-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 600px;
+}
+
+.launch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.launch-full { width: 100%; }
+
+/* ── Конструктор запроса ───────────────── */
+.builder-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 2×2 сетка чип-полей */
+.builder-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px 24px;
+}
+
+.chip-field {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 600px;
+  min-width: 0;
+}
+
+.chip-label {
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  line-height: 16px;
+  color: #444654;
+}
+
+.chip-input-field {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid #c4c5d7;
+  border-radius: 8px;
+  background: #fcf9f8;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus-within {
+    border-color: #264fd1;
+    box-shadow: 0 0 0 3px rgba(38, 79, 209, 0.15);
+  }
+}
+
+/* Поле «Исключить компании» — выше по дизайну (padding 11) */
+.chip-input-field-tall { padding: 11px 8px; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.chip-title      { background: #466aeb33; color: #1b1b1c; }
+.chip-description{ background: #00d2fd33; color: #005669; }
+.chip-excluded   { background: #ffdad680; color: #93000a; }
+
+.chip-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  mat-icon {
+    width: 12px;
+    height: 12px;
+    font-size: 12px;
+    line-height: 12px;
+  }
+
+  &:hover { background: rgba(0, 0, 0, 0.1); }
+}
+
+.chip-input {
+  flex: 1 1 140px;
+  min-width: 140px;
+  height: 24px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #1b1b1c;
+
+  &::placeholder { color: #6b7280; }
+}
+
+/* Превью запроса hh.ru */
+.preview-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preview-box {
+  min-height: 54px;
+  box-sizing: border-box;
+  padding: 16px;
+  border: 1px solid #c4c5d780;
+  border-radius: 8px;
+  background: #e5e2e180;
+
+  code {
+    font-family: 'Liberation Mono', 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 20px;
+    color: #1b1b1c;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+
+.preview-empty {
+  font-size: 14px;
+  line-height: 20px;
+  color: #6b7280;
+}
+
+/* Кнопки «Сбросить» / «Сохранить запрос» */
+.builder-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 24px;
+  border: 1px solid #c4c5d7;
+  border-radius: 9999px;
+  background: none;
+  color: #1b1b1c;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover { background: rgba(0, 0, 0, 0.04); }
+}
+
+.btn-save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 9999px;
+  background: #264fd1;
+  color: #ffffff;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    line-height: 18px;
+  }
+
+  &:hover { background: #1f43b8; box-shadow: 0 2px 8px rgba(38, 79, 209, 0.3); }
 }

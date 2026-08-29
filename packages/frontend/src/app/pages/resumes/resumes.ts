@@ -1,14 +1,18 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { ResumeService } from '../../core/services/resume.service';
 import { ResumeDoc } from '../../core/models/types';
 import { ResumeNameDialogComponent } from './resume-name-dialog';
 
+// Тип файла резюме — определяет цвет и иконку карточки (дизайн Figma).
+type ResumeKind = 'pdf' | 'docx' | 'txt' | 'other';
+
 @Component({
   selector: 'app-resumes',
   standalone: true,
-  imports: [DatePipe],
+  imports: [MatIconModule, MatTooltipModule],
   templateUrl: './resumes.html',
   styleUrls: ['./resumes.scss'],
 })
@@ -19,6 +23,9 @@ export class ResumeListPageComponent implements OnInit {
 
   private resumeService = inject(ResumeService);
   private dialog = inject(MatDialog);
+
+  // Сокращённые русские месяцы для даты «24 окт 2023» — как в дизайне.
+  private months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 
   ngOnInit() {
     this.load();
@@ -70,5 +77,49 @@ export class ResumeListPageComponent implements OnInit {
         this.error.set(err?.message || 'Ошибка удаления');
       },
     });
+  }
+
+  download(r: ResumeDoc) {
+    this.resumeService.downloadResume(r.resumeId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = r.filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        this.error.set(err?.message || 'Ошибка скачивания файла');
+      },
+    });
+  }
+
+  // Тип файла по расширению.
+  kind(filename: string): ResumeKind {
+    const ext = filename.split('.').pop()?.toLowerCase() ?? '';
+    if (ext === 'pdf') return 'pdf';
+    if (ext === 'docx' || ext === 'doc') return 'docx';
+    if (ext === 'txt' || ext === 'md') return 'txt';
+    return 'other';
+  }
+
+  kindIcon(kind: ResumeKind): string {
+    switch (kind) {
+      case 'pdf':
+        return 'picture_as_pdf';
+      case 'docx':
+        return 'description';
+      case 'txt':
+        return 'text_snippet';
+      default:
+        return 'insert_drive_file';
+    }
+  }
+
+  formatDate(iso: string): string {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    return `${d.getDate()} ${this.months[d.getMonth()]} ${d.getFullYear()}`;
   }
 }

@@ -23,6 +23,8 @@ export class ConfigService {
       employment: null as string | null,
     },
     filter: {
+      titleKeywords: [] as string[],
+      descriptionKeywords: [] as string[],
       requiredSkills: [] as string[],
       excludedKeywords: [] as string[],
       excludedCompanies: [] as string[],

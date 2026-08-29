@@ -1,73 +1,135 @@
-<div class="page-container">
-    <mat-card class="settings-card">
-      <mat-card-header>
-        <mat-card-title>Добавить HH-аккаунт</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formRoot]="formGroup" class="form-column" (submit)="onSubmit($event)">
-          @if (awaitingCode()) {
-            <span class="form-label">Введите код из {{ loginType() === 'email' ? 'почты' : 'смс' }}</span>
-            <mat-form-field appearance="outline">
-              <mat-label>Код из {{ loginType() === 'email' ? 'почты' : 'смс' }}</mat-label>
-              <input matInput placeholder="123456" [formField]="formGroup.smsCode" />
-            </mat-form-field>
-            <button mat-raised-button color="primary" type="button" (click)="submitCode()" [disabled]="!formGroup().valid">Подтвердить</button>
-          } @else {
-            <span class="form-label">Вход по</span>
-            <mat-button-toggle-group [(value)]="loginType" name="type" [hideSingleSelectionIndicator]="true">
-              <mat-button-toggle value="phone">Телефон</mat-button-toggle>
-              <mat-button-toggle value="email">Почта</mat-button-toggle>
-            </mat-button-toggle-group>
+<div class="settings-canvas">
+  <h1 class="page-title">Настройки</h1>
 
-            @if (loginType() === 'phone') {
-              <mat-form-field appearance="outline">
-                <mat-label>Телефон</mat-label>
-                <input matInput placeholder="+7 900 000-00-00" [formField]="formGroup.phone" />
-              </mat-form-field>
-            } @else {
-              <mat-form-field appearance="outline">
-                <mat-label>Email</mat-label>
-                <input matInput placeholder="name@example.com" [formField]="formGroup.email" />
-              </mat-form-field>
-            }
-            <mat-slide-toggle
-              [checked]="loginByCode()"
-              (change)="loginByCode.set($event.checked)"
-            >
-              Вход по коду из {{ loginType() === 'email' ? 'почты' : 'смс' }}
-            </mat-slide-toggle>
-            @if (loginByCode() === false) {
-              <mat-form-field appearance="outline">
-                <mat-label>Пароль от HH</mat-label>
-                <input matInput type="password" [formField]="formGroup.password" />
-              </mat-form-field>
-            }
-            <button mat-raised-button color="primary" type="submit" [disabled]="!formGroup().valid">Добавить</button>
-          }
-        </form>
-      </mat-card-content>
-    </mat-card>
+  @if (notice()) {
+    <div class="error-banner">
+      <span>⚠️</span>
+      <span>{{ notice() }}</span>
+      <button class="btn-dismiss" (click)="notice.set('')">×</button>
+    </div>
+  }
 
-    <mat-card class="settings-card">
-      <mat-card-header>
-        <mat-card-title>Подключённые аккаунты</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        @if (sessions().length === 0) {
-          <p class="hint">Пока нет подключённых hh-аккаунтов.</p>
-        } @else {
-          @for (s of sessions(); track s._id) {
-            <div class="session-row">
-              <div class="session-info">
-                <strong>{{ s.email || s.phone || s.accountId }}</strong>
-                <span class="session-date">{{ s.loginAt ? (s.loginAt | date: 'short') : '—' }}</span>
+  <!-- Подключение hh.ru -->
+  <section class="settings-card" id="connect-section">
+    <span class="heading-accent" aria-hidden="true"></span>
+
+    <div class="card-heading">
+      <mat-icon class="heading-icon">link</mat-icon>
+      <h2 class="card-title">Подключить hh.ru</h2>
+    </div>
+
+    @if (!awaitingCode()) {
+      <form class="connect-form" [formRoot]="loginForm" (submit)="onSubmit($event)">
+        <div class="connect-input">
+          <label class="input-label" for="hh-login">Телефон или Email</label>
+          <input
+            id="hh-login"
+            class="input-field"
+            type="text"
+            autocomplete="off"
+            placeholder="Введите данные для входа"
+            [formField]="loginForm.login"
+          />
+        </div>
+        <button class="btn-pill" type="submit" [disabled]="!loginForm().valid()">Получить код</button>
+      </form>
+    } @else {
+      <form class="connect-form" [formRoot]="codeForm" (submit)="submitCode()">
+        <div class="connect-input">
+          <label class="input-label" for="hh-code">Код из {{ loginType === 'email' ? 'почты' : 'смс' }}</label>
+          <input
+            id="hh-code"
+            class="input-field"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            placeholder="••••••"
+            [formField]="codeForm.code"
+          />
+        </div>
+        <button class="btn-pill" type="submit" [disabled]="!codeForm().valid()">Подтвердить</button>
+        <button class="btn-ghost" type="button" (click)="cancelCode()">Отмена</button>
+      </form>
+    }
+  </section>
+
+  <!-- Подключённые аккаунты -->
+  <section class="settings-card">
+    <h2 class="card-title">Подключенные аккаунты</h2>
+
+    @if (loading()) {
+      <div class="loading-container">
+        <div class="spinner"></div>
+      </div>
+    } @else if (!accounts().length) {
+      <p class="hint">Пока нет подключённых hh-аккаунтов.</p>
+    } @else {
+      <div class="account-list">
+        @for (a of accounts(); track a._id) {
+          <div class="account-row" [class.error]="!a.valid">
+            <div class="account-avatar" [class.error]="!a.valid">
+              <mat-icon>person</mat-icon>
+            </div>
+            <div class="account-main">
+              <div class="account-name">{{ a.email || a.phone || a.accountId }}</div>
+              <div class="account-status" [class.error]="!a.valid">
+                <span class="status-dot"></span>
+                <span>{{ a.valid ? 'Активен' : 'Ошибка авторизации' }}</span>
               </div>
-              <button mat-icon-button color="warn" (click)="removeSession(s._id)">
-                <mat-icon>delete</mat-icon>
+            </div>
+            <div class="account-actions">
+              @if (a.valid) {
+                <button
+                  class="account-btn"
+                  matTooltip="Изменить"
+                  [attr.aria-label]="'Изменить аккаунт'"
+                  (click)="reconnect(a)"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+              } @else {
+                <button class="account-login" (click)="reconnect(a)">Авторизоваться</button>
+              }
+              <button
+                class="account-btn danger"
+                matTooltip="Удалить"
+                [attr.aria-label]="'Удалить аккаунт'"
+                (click)="removeAccount(a._id)"
+              >
+                <mat-icon>delete_outline</mat-icon>
               </button>
             </div>
-          }
+          </div>
         }
-      </mat-card-content>
-    </mat-card>
+      </div>
+    }
+  </section>
+
+  <!-- Настройки приложения -->
+  <section class="settings-card">
+    <h2 class="card-title">Настройки приложения</h2>
+
+    <div class="app-setting-row">
+      <div class="setting-text">
+        <div class="setting-name">Темная тема</div>
+        <div class="setting-desc">Включить темное оформление интерфейса</div>
+      </div>
+      <mat-slide-toggle
+        [checked]="theme.dark()"
+        (change)="theme.setDark($event.checked)"
+        [attr.aria-label]="'Тёмная тема'"
+      ></mat-slide-toggle>
+    </div>
+
+    <div class="app-setting-row">
+      <div class="setting-text">
+        <div class="setting-name">Язык</div>
+        <div class="setting-desc">Язык интерфейса по умолчанию</div>
+      </div>
+      <div class="lang-select" [attr.aria-label]="'Язык интерфейса'">
+        <span>Русский</span>
+        <mat-icon class="lang-select-icon">arrow_drop_down</mat-icon>
+      </div>
+    </div>
+  </section>
 </div>
