@@ -221,7 +221,11 @@ html.dark-theme {
   .spinner { border-color: #2e2e2e !important; }
 
   // Дашборд
-  .stat-card p, .vacancy-meta { color: rgba(255, 255, 255, 0.6) !important; }
+  .stat-card .stat-label, .vacancy-meta, .vacancy-company { color: rgba(255, 255, 255, 0.6) !important; }
+  .stat-value, .vacancy-salary, .digest-title, .page-title { color: rgba(255, 255, 255, 0.9) !important; }
+  .stat-card.accent .stat-value { color: #a5d6a7 !important; }
+  .vacancy-title, .digest-link { color: #90caf9 !important; }
+  .meta-dot { background: rgba(255, 255, 255, 0.3) !important; }
   .score-badge {
     background: #2e2e2e !important;
     color: #bdbdbd !important;

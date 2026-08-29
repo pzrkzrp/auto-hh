@@ -1,93 +1,185 @@
-.page-container {
-  max-width: 900px;
-  margin: 0 auto;
+.dashboard-canvas {
   padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* ── Stats row ── */
-.stats-row {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
+/* ── Заголовок ─────────────────────────── */
+.page-title {
+  margin: 0 0 24px;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  color: #1b1b1c;
+}
+
+/* ── Stat-карточки ─────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px;
   margin-bottom: 32px;
 }
 
 .stat-card {
-  flex: 1;
-  min-width: 180px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-
-  h1 {
-    margin: 0 0 4px;
-    font-size: 2rem;
-    font-weight: 700;
-  }
-
-  p {
-    margin: 0;
-    color: rgba(0, 0, 0, 0.6);
-    font-size: 0.9rem;
-  }
-}
-
-/* ── Vacancy card ── */
-.vacancy-card {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 16px;
-  margin-bottom: 12px;
+  border-radius: 12px;
+  background: #fcf9f8;
+  border: 1px solid #e0e0e0;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
-.vacancy-row {
+.stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  line-height: 16px;
+  color: #444654;
+}
+
+.stat-value {
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 57px;
+  font-weight: 700;
+  letter-spacing: -0.25px;
+  line-height: 64px;
+  color: #1b1b1c;
+}
+
+.stat-card.accent .stat-value { color: #2e7d32; }
+
+/* ── Дайджест ──────────────────────────── */
+.digest-section { margin-top: 8px; }
+
+.digest-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.digest-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 28px;
+  color: #1b1b1c;
+}
+
+.digest-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  line-height: 16px;
+  color: #264fd1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover { opacity: 0.8; }
+}
+
+.digest-link-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+  line-height: 16px;
+}
+
+/* ── Vacancy-карточки ──────────────────── */
+.vacancy-list { display: flex; flex-direction: column; gap: 12px; }
+
+.vacancy-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #fcf9f8;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.vacancy-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.vacancy-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.15px;
+  line-height: 24px;
+  color: #264fd1;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
 }
 
 .vacancy-meta {
-  margin: 4px 0 0;
-  color: rgba(0, 0, 0, 0.6);
-  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  letter-spacing: 0.25px;
+  line-height: 20px;
 }
 
-/* ── Score badge ── */
+.vacancy-company { color: #444654; font-weight: 400; }
+
+.meta-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: #c4c5d7;
+}
+
+.vacancy-salary { color: #1b1b1c; font-weight: 500; }
+
+/* Score-бейдж */
 .score-badge {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 1rem;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
-  background: #e8e8e8;
-  color: #555;
+  border-radius: 9999px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.15px;
+  line-height: 24px;
 
   &.high {
-    background: #e8f5e9;
+    background: rgba(46, 125, 50, 0.1);
     color: #2e7d32;
   }
-
   &.medium {
-    background: #fff3e0;
-    color: #e65100;
+    background: rgba(237, 108, 2, 0.1);
+    color: #ed6c02;
   }
-
   &.low {
-    background: #fce4ec;
-    color: #c62828;
+    background: rgba(186, 26, 26, 0.1);
+    color: #ba1a1a;
   }
 }
 
-/* ── States ── */
+/* ── Состояния ─────────────────────────── */
 .error-state {
   display: flex;
   flex-direction: column;
@@ -96,9 +188,7 @@
   padding: 48px 0;
   color: #c62828;
 
-  .icon {
-    font-size: 2.5rem;
-  }
+  .icon { font-size: 2.5rem; }
 }
 
 .empty-state {
@@ -109,9 +199,7 @@
   padding: 48px 0;
   color: rgba(0, 0, 0, 0.5);
 
-  .icon {
-    font-size: 2.5rem;
-  }
+  .icon { font-size: 2.5rem; }
 
   h3 {
     margin: 0;
@@ -119,12 +207,9 @@
     color: rgba(0, 0, 0, 0.8);
   }
 
-  p {
-    margin: 0 0 16px;
-  }
+  p { margin: 0 0 16px; }
 }
 
-/* ── Button ── */
 .btn-primary {
   display: inline-block;
   padding: 10px 24px;
@@ -137,12 +222,10 @@
   cursor: pointer;
   transition: background 0.2s;
 
-  &:hover {
-    background: #1565c0;
-  }
+  &:hover { background: #1565c0; }
 }
 
-/* ── Skeleton ── */
+/* ── Skeleton ──────────────────────────── */
 .skeleton-card {
   height: 120px;
   border-radius: 12px;

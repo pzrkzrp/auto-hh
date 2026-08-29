@@ -1,0 +1,272 @@
+/* Экран входа — реплика Figma-макета «3 - A - Log In» (Fitness App UI Kit).
+   Тёмный «телефон» 393×852: статус-бар, заголовок, градиентное панно с формой
+   и соц-вход. Отступы/размеры сняты с макета, иконки — SVG из Figma. */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background: radial-gradient(120% 120% at 50% 0%, #2b2b3a 0%, #141414 62%);
+}
+
+.phone {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  width: 393px;
+  height: 852px;
+  box-sizing: border-box;
+  background: #232323;
+  border: 1px solid #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+/* ── Статус-бар ─────────────────────────────────────────────── */
+.status-bar {
+  flex: none;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 35px;
+  box-sizing: border-box;
+  background: #7c57ff;
+  color: #fff;
+}
+
+.status-time {
+  font-family: 'League Spartan', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.status-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Заголовок ──────────────────────────────────────────────── */
+.login-header {
+  position: relative;
+  margin-top: 30px;
+  padding: 0 35px;
+}
+
+.back-arrow {
+  position: absolute;
+  left: 35px;
+  top: 3px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.login-title {
+  margin: 0;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #e2f163;
+}
+
+.welcome {
+  margin: 64px 0 0;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.tagline {
+  margin: 26px 35px 0;
+  text-align: center;
+  font-family: 'League Spartan', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 14px;
+  color: #fff;
+}
+
+/* ── Форма: форма в потоке «телефона», панно и кнопка — её дети ── */
+.login-form {
+  display: contents;
+}
+
+.gradient-panel {
+  margin-top: 71px;
+  padding: 28px 41px 20px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #b3a0ff 0%, #896cfe 100%);
+}
+
+.field-label {
+  display: block;
+  margin: 0 0 7px;
+  font-family: 'League Spartan', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: #232323;
+}
+
+.password-label {
+  margin-top: 19px;
+}
+
+.field-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 45px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 15px;
+  background: #fff;
+  outline: none;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: #232323;
+}
+
+.field-input::placeholder {
+  color: #8a8a8a;
+}
+
+.field-input:focus {
+  box-shadow: inset 0 0 0 2px #7c57ff;
+}
+
+/* Звёздочки пароля в макете разнесены letter-spacing 23% */
+.password-input {
+  letter-spacing: 0.18em;
+}
+
+.validation-error {
+  margin-top: 4px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6d1b1b;
+}
+
+.forgot {
+  display: block;
+  margin-top: 12px;
+  text-align: right;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #232323;
+  cursor: pointer;
+}
+
+.server-error {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(35, 35, 35, 0.85);
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+}
+
+/* ── Кнопка входа (пилюля) ──────────────────────────────────── */
+.login-button {
+  flex: none;
+  align-self: center;
+  margin-top: 41px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 178px;
+  height: 44px;
+  box-sizing: border-box;
+  border: 1px solid #fff;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.login-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Соц-вход ───────────────────────────────────────────────── */
+.or-divider {
+  margin: 29px 0 0;
+  text-align: center;
+  font-family: 'League Spartan', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  color: #fff;
+}
+
+.social-row {
+  margin-top: 19px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.social-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 13px;
+  background: transparent;
+  box-shadow: 0 0 0 1px #896cfe; /* обводка не съедает площадь иконки */
+  cursor: pointer;
+}
+
+.social-btn svg {
+  display: block;
+}
+
+.signup {
+  margin: 48px 0 0;
+  text-align: center;
+  font-family: 'League Spartan', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  color: #fff;
+}
+
+.signup a {
+  color: #e2f163;
+  font-weight: 500;
+  text-decoration: none;
+}

@@ -11,7 +11,7 @@ import { HeaderComponent } from '../header/header';
   imports: [RouterOutlet, ScrollingModule, MatSidenavModule, SidebarComponent, HeaderComponent],
   template: `
     <mat-sidenav-container>
-      <mat-sidenav mode="side" opened style="width: 240px;">
+      <mat-sidenav mode="side" opened style="width: 280px;">
         <app-sidebar></app-sidebar>
       </mat-sidenav>
       <mat-sidenav-content>

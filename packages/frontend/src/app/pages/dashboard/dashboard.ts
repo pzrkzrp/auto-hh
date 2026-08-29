@@ -1,11 +1,14 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
 import { DashboardService } from '../../core/services/dashboard.service';
+
+type StatCard = { label: string; value: string; accent?: boolean };
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, MatIconModule],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss'],
 })
@@ -30,5 +33,15 @@ export class DashboardPageComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  get statCards(): StatCard[] {
+    const fmt = (n?: number) => (n ?? 0).toLocaleString('ru-RU');
+    return [
+      { label: 'Просмотрено', value: fmt(this.stats.totalSeen) },
+      { label: 'Откликов', value: fmt(this.stats.totalApplied) },
+      { label: 'Сегодня', value: `+${fmt(this.stats.todayApplied)}`, accent: true },
+      { label: 'В очереди', value: fmt(this.queueCount) },
+    ];
   }
 }

@@ -1,10 +1,10 @@
-<div class="page-container">
-  <h1>Дашборд</h1>
+<div class="dashboard-canvas">
+  <h1 class="page-title">Дашборд</h1>
 
   @if (loading) {
-    <div style="display:flex; gap:16px; flex-wrap:wrap;">
-      @for (i of [1,2,3,4]; track i) {
-        <div class="skeleton-card" style="width:200px;"></div>
+    <div class="stat-grid">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="skeleton-card"></div>
       }
     </div>
   } @else if (error) {
@@ -13,52 +13,58 @@
       <p>{{ error }}</p>
     </div>
   } @else {
-    <div class="stats-row">
-      <div class="stat-card">
-        <h1>{{ stats.totalSeen }}</h1>
-        <p>Просмотрено</p>
-      </div>
-      <div class="stat-card">
-        <h1>{{ stats.totalApplied }}</h1>
-        <p>Откликов</p>
-      </div>
-      <div class="stat-card">
-        <h1>{{ stats.todayApplied }}</h1>
-        <p>Сегодня</p>
-      </div>
-      <div class="stat-card">
-        <h1>{{ queueCount }}</h1>
-        <p>В очереди</p>
-      </div>
-    </div>
-
-    <h2>Последний дайджест</h2>
-    @if (latestDigest?.entries?.length) {
-      @for (entry of latestDigest.entries.slice(0, 5); track entry.id) {
-        <div class="vacancy-card">
-          <div class="vacancy-row">
-            <div
-              class="score-badge"
-              [class.high]="entry.score >= 8"
-              [class.medium]="entry.score >= 6 && entry.score < 8"
-              [class.low]="entry.score < 6"
-            >
-              {{ entry.score }}
-            </div>
-            <div>
-              <strong>{{ entry.title }}</strong>
-              <p class="vacancy-meta">{{ entry.employer }} · {{ entry.salary }}</p>
-            </div>
-          </div>
+    <div class="stat-grid">
+      @for (card of statCards; track card.label) {
+        <div class="stat-card" [class.accent]="card.accent">
+          <div class="stat-label">{{ card.label }}</div>
+          <div class="stat-value">{{ card.value }}</div>
         </div>
       }
-    } @else {
-      <div class="empty-state">
-        <span class="icon">📥</span>
-        <h3>Нет данных</h3>
-        <p>Запустите поиск через CLI, чтобы увидеть результаты</p>
-        <a class="btn-primary" routerLink="/search">Настроить поиск</a>
+    </div>
+
+    <section class="digest-section">
+      <div class="digest-header">
+        <h2 class="digest-title">Последний дайджест</h2>
+        <a class="digest-link" routerLink="/search">
+          <span>Все вакансии</span>
+          <mat-icon class="digest-link-icon">chevron_right</mat-icon>
+        </a>
       </div>
-    }
+
+      @if (latestDigest?.entries?.length) {
+        <div class="vacancy-list">
+          @for (entry of latestDigest.entries.slice(0, 5); track entry.id) {
+            <div class="vacancy-card">
+              <div class="vacancy-main">
+                <a
+                  class="vacancy-title"
+                  [href]="entry.url"
+                  [attr.target]="entry.url ? '_blank' : null"
+                  [attr.rel]="entry.url ? 'noopener' : null"
+                >{{ entry.title }}</a>
+                <div class="vacancy-meta">
+                  <span class="vacancy-company">{{ entry.employer }}</span>
+                  <span class="meta-dot"></span>
+                  <span class="vacancy-salary">{{ entry.salary }}</span>
+                </div>
+              </div>
+              <div
+                class="score-badge"
+                [class.high]="entry.score >= 8"
+                [class.medium]="entry.score >= 6 && entry.score < 8"
+                [class.low]="entry.score < 6"
+              >{{ entry.score }}</div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <span class="icon">📥</span>
+          <h3>Нет данных</h3>
+          <p>Запустите поиск через CLI, чтобы увидеть результаты</p>
+          <a class="btn-primary" routerLink="/search">Настроить поиск</a>
+        </div>
+      }
+    </section>
   }
 </div>

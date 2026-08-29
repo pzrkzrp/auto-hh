@@ -1,41 +1,32 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { MatListModule } from '@angular/material/list';
+import { MatIconModule } from '@angular/material/icon';
 import { ThemeService } from '../../core/services/theme.service';
 
-type NavItem = { label: string; icon?: string; link: string };
-type NavGroup = { title: string; items: NavItem[] };
+type NavItem = { label: string; icon: string; link: string };
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [MatListModule, RouterLink, RouterLinkActive],
+  imports: [MatIconModule, RouterLink, RouterLinkActive],
   templateUrl: './sidebar.html',
   styleUrls: ['./sidebar.scss'],
 })
 export class SidebarComponent {
   readonly theme = inject(ThemeService);
 
-  groups: NavGroup[] = [
-    { title: 'Обзор', items: [
-      { label: 'Дашборд', icon: '📊', link: '/dashboard' },
-      { label: 'Дайджест', icon: '📰', link: '/digest' },
-      { label: 'Отклики', icon: '✉️', link: '/apply-queue' },
-      { label: 'История', icon: '🕘', link: '/history' },
-    ]},
-    {
-      title: 'Вакансии', items: [
-        { label: 'Поиск', link: '/search' },
-      ]
-    },
-    { title: 'Резюмейкер', items: [
-      { label: 'Резюме', icon: '📄', link: '/resumes' },
-      { label: 'Оценка', icon: '⭐', link: '/grade' },
-    ]},
-    { title: 'Система', items: [
-      { label: 'Настройки', icon: '👤', link: '/settings' },
-      { label: 'Конфиг', link: '/config' },
+  navItems: NavItem[] = [
+    { label: 'Дашборд', icon: 'dashboard', link: '/dashboard' },
+    { label: 'Дайджест', icon: 'article', link: '/digest' },
+    { label: 'Отклики', icon: 'outbox', link: '/apply-queue' },
+    { label: 'История', icon: 'history', link: '/history' },
+    { label: 'Поиск', icon: 'search', link: '/search' },
+    { label: 'Резюме', icon: 'description', link: '/resumes' },
+    { label: 'Оценка', icon: 'grade', link: '/grade' },
+  ];
 
-      ]},
+  footerItems: NavItem[] = [
+    { label: 'Настройки', icon: 'settings', link: '/settings' },
+    { label: 'Конфиг', icon: 'tune', link: '/config' },
   ];
 }

@@ -1,36 +1,50 @@
 <div class="sidebar">
   <div class="brand">
-    <div class="brand-logo">🤖</div>
-    <div class="brand-text">
-      <h2>auto-hh</h2>
-      <span>HR-ассистент</span>
-    </div>
+    <span class="brand-logo">🤖</span>
+    <h1 class="brand-title">auto-hh</h1>
   </div>
 
+  <div class="menu-label">МЕНЮ</div>
+
   <nav class="nav">
-    @for (group of groups; track group.title) {
-      <div class="nav-group">
-        <div class="nav-group-title">{{ group.title }}</div>
-        <mat-nav-list>
-          @for (item of group.items; track item.link) {
-            <a mat-list-item [routerLink]="item.link" routerLinkActive="active-link" [attr.aria-label]="item.label"><span matListItemTitle><span class="item-label">{{ item.label }}</span></span></a>
-          }
-        </mat-nav-list>
-      </div>
+    @for (item of navItems; track item.link) {
+      <a
+        class="nav-item"
+        [routerLink]="item.link"
+        routerLinkActive="active"
+        [attr.aria-label]="item.label"
+        [attr.title]="item.label"
+      >
+        <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+        <span class="nav-label">{{ item.label }}</span>
+      </a>
     }
   </nav>
 
   <div class="footer">
+    @for (item of footerItems; track item.link) {
+      <a
+        class="nav-item"
+        [routerLink]="item.link"
+        routerLinkActive="active"
+        [attr.aria-label]="item.label"
+        [attr.title]="item.label"
+      >
+        <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+        <span class="nav-label">{{ item.label }}</span>
+      </a>
+    }
+
+    <div class="status-chip">
+      <mat-icon class="status-icon">check_circle</mat-icon>
+      <span>Система активна</span>
+    </div>
+
     <button
       class="theme-toggle"
       (click)="theme.toggle()"
       [attr.aria-label]="theme.dark() ? 'Включить светлую тему' : 'Включить тёмную тему'"
       [attr.title]="theme.dark() ? 'Светлая тема' : 'Тёмная тема'"
     >{{ theme.dark() ? '☀️' : '🌙' }}</button>
-    <div class="status">
-      <span class="status-dot"></span>
-      <span>в работе</span>
-    </div>
-    <span class="version">v1.0.0</span>
   </div>
 </div>
