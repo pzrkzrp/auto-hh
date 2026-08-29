@@ -7,6 +7,7 @@ import { form, required, pattern, FormRoot, FormField } from '@angular/forms/sig
 
 import { SettingsService, HhLoginPayload, HhSessionInfo } from '../../core/services/settings.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { AuthService } from '../../core/services/auth.service';
 
 // Аккаунт + вычисленный статус сессии: valid=true — «Активен», false — «Ошибка
 // авторизации». Статус проверяется через check-эндпоинт (headless-браузер).
@@ -26,9 +27,20 @@ export class SettingsPageComponent implements OnInit {
   loading = signal(true);
   notice = signal('');
 
-  // Единое поле входа «Телефон или Email» (как в дизайне) — вход всегда по коду.
+  // Единое поле входа — вход всегда по коду. Переключатель «Телефон/Email»
+  // задаёт режим явно (в дизайне это метка «Телефон или Email»), от него
+  // зависят placeholder, inputmode и поле payload.
+  loginMode = signal<'phone' | 'email'>('phone');
   loginInput = signal({ login: '' });
-  loginForm = form(this.loginInput, (f) => required(f.login));
+  loginForm = form(this.loginInput, (f) => {
+    required(f.login);
+    // Валидация зависит от режима: полная маска телефона или простой email.
+    if (this.loginMode() === 'email') {
+      pattern(f.login, /^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+    } else {
+      pattern(f.login, /^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/);
+    }
+  });
 
   // Шаг подтверждения кодом из смс/почты.
   awaitingCode = signal(false);
@@ -40,14 +52,10 @@ export class SettingsPageComponent implements OnInit {
   });
 
   private settingsService = inject(SettingsService);
+  private authService = inject(AuthService);
 
   ngOnInit() {
     this.loadAccounts();
-  }
-
-  // Если значение содержит '@' — это почта, иначе телефон.
-  get loginType(): 'phone' | 'email' {
-    return this.loginForm().value().login.includes('@') ? 'email' : 'phone';
   }
 
   loadAccounts() {
@@ -84,8 +92,8 @@ export class SettingsPageComponent implements OnInit {
 
     this.notice.set('');
     const payload: HhLoginPayload = { wait_code: true };
-    if (login.includes('@')) payload.email = login;
-    else payload.phone = login;
+    if (this.loginMode() === 'email') payload.email = login;
+    else payload.phone = login.replace(/\D/g, ''); // бэкенд ждёт цифры: 7XXXXXXXXXX
 
     this.settingsService.login(payload).subscribe({
       next: (res) => {
@@ -132,6 +140,44 @@ export class SettingsPageComponent implements OnInit {
     this.loginForm().reset();
   }
 
+  // ── Маски ввода ──────────────────────────────────────────────────────
+  // Телефон: +7 (XXX) XXX-XX-XX — форматируем по мере ввода цифр.
+  formatPhone(raw: string): string {
+    let digits = raw.replace(/\D/g, '');
+    if (!digits) return '';
+    // «8» в начале — российский формат, приводим к +7.
+    if (digits.startsWith('8')) digits = '7' + digits.slice(1);
+    if (digits.startsWith('7')) digits = digits.slice(1);
+    digits = digits.slice(0, 10);
+
+    let result = '+7';
+    if (digits.length) result += ` (${digits.slice(0, 3)}`;
+    if (digits.length >= 3) result += ')';
+    if (digits.length > 3) result += ` ${digits.slice(3, 6)}`;
+    if (digits.length > 6) result += `-${digits.slice(6, 8)}`;
+    if (digits.length > 8) result += `-${digits.slice(8, 10)}`;
+    return result;
+  }
+
+  // Email-маска: только допустимые символы, в нижнем регистре, без пробелов.
+  formatEmail(raw: string): string {
+    return raw.replace(/[^\w.@%+\-]/g, '').toLowerCase().slice(0, 64);
+  }
+
+  // Ввод под маску: форматируем сразу в DOM (чтобы не прыгал курсор) и в сигнал.
+  onLoginInput(event: Event) {
+    const el = event.target as HTMLInputElement;
+    const formatted = this.loginMode() === 'email' ? this.formatEmail(el.value) : this.formatPhone(el.value);
+    el.value = formatted;
+    this.loginInput.update((v) => ({ ...v, login: formatted }));
+  }
+
+  // Смена режима сбрасывает поле, чтобы маска/валидация не конфликтовали.
+  switchLoginMode(mode: 'phone' | 'email') {
+    this.loginMode.set(mode);
+    this.loginInput.set({ login: '' });
+  }
+
   removeAccount(id: string) {
     this.settingsService.removeSession(id).subscribe({
       next: () => this.loadAccounts(),
@@ -142,10 +188,20 @@ export class SettingsPageComponent implements OnInit {
   // Повторная авторизация / изменение аккаунта: подставляем телефон/почту в
   // форму подключения и скроллим к ней. Старую сессию пользователь удаляет сам.
   reconnect(account: HhAccount) {
-    this.loginInput.set({ login: account.phone || account.email || '' });
+    const mode: 'phone' | 'email' = account.email ? 'email' : 'phone';
+    this.loginMode.set(mode);
+    // Сохранённое значение форматируем под маску выбранного режима.
+    this.loginInput.set({
+      login: mode === 'email' ? this.formatEmail(account.email || '') : this.formatPhone(account.phone || ''),
+    });
     this.awaitingCode.set(false);
     this.pendingAccountId.set(null);
     this.notice.set('');
     document.getElementById('connect-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // «Выйти» из настроек — завершает сессию веб-приложения и ведёт на /login.
+  logout() {
+    this.authService.logout();
   }
 }

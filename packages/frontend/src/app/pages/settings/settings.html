@@ -21,14 +21,33 @@
     @if (!awaitingCode()) {
       <form class="connect-form" [formRoot]="loginForm" (submit)="onSubmit($event)">
         <div class="connect-input">
-          <label class="input-label" for="hh-login">Телефон или Email</label>
+          <div class="login-mode-toggle" role="radiogroup" aria-label="Способ входа">
+            <button
+              type="button"
+              class="mode-btn"
+              role="radio"
+              [class.active]="loginMode() === 'phone'"
+              [attr.aria-checked]="loginMode() === 'phone'"
+              (click)="switchLoginMode('phone')"
+            >Телефон</button>
+            <button
+              type="button"
+              class="mode-btn"
+              role="radio"
+              [class.active]="loginMode() === 'email'"
+              [attr.aria-checked]="loginMode() === 'email'"
+              (click)="switchLoginMode('email')"
+            >Email</button>
+          </div>
           <input
             id="hh-login"
             class="input-field"
             type="text"
             autocomplete="off"
-            placeholder="Введите данные для входа"
-            [formField]="loginForm.login"
+            [attr.inputmode]="loginMode() === 'email' ? 'email' : 'tel'"
+            [attr.placeholder]="loginMode() === 'email' ? 'Введите email' : 'Введите номер телефона'"
+            [value]="loginInput().login"
+            (input)="onLoginInput($event)"
           />
         </div>
         <button class="btn-pill" type="submit" [disabled]="!loginForm().valid()">Получить код</button>
@@ -36,7 +55,7 @@
     } @else {
       <form class="connect-form" [formRoot]="codeForm" (submit)="submitCode()">
         <div class="connect-input">
-          <label class="input-label" for="hh-code">Код из {{ loginType === 'email' ? 'почты' : 'смс' }}</label>
+          <label class="input-label" for="hh-code">Код из {{ loginMode() === 'email' ? 'почты' : 'смс' }}</label>
           <input
             id="hh-code"
             class="input-field"
@@ -130,6 +149,17 @@
         <span>Русский</span>
         <mat-icon class="lang-select-icon">arrow_drop_down</mat-icon>
       </div>
+    </div>
+
+    <div class="app-setting-row">
+      <div class="setting-text">
+        <div class="setting-name">Выход из системы</div>
+        <div class="setting-desc">Завершить текущую сессию</div>
+      </div>
+      <button class="btn-logout" (click)="logout()" [attr.aria-label]="'Выйти из системы'">
+        <mat-icon>logout</mat-icon>
+        <span>Выйти</span>
+      </button>
     </div>
   </section>
 </div>

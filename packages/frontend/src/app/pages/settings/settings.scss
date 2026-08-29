@@ -108,6 +108,38 @@
   color: #444654;
 }
 
+/* Сегмент-переключатель «Телефон | Email» (заменяет статичную метку) */
+.login-mode-toggle {
+  display: inline-flex;
+  gap: 4px;
+  align-self: flex-start;
+  padding: 3px;
+  border-radius: 8px;
+  background: #e5e2e1;
+}
+
+.mode-btn {
+  height: 28px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  line-height: 20px;
+  color: #444654;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+
+  &.active {
+    background: #ffffff;
+    color: #1b1b1c;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  }
+}
+
 .input-field {
   height: 40px;
   padding: 10px 12px;
@@ -303,10 +335,42 @@
   justify-content: space-between;
   gap: 16px;
   padding: 16px 0;
-  border-bottom: 1px solid #e0e0e0;
+  border-top: 1px solid #e0e0e0;
 
-  &:first-of-type { padding-top: 8px; }
-  &:last-child { padding-bottom: 0; border-bottom: none; }
+  &:first-of-type { padding-top: 8px; border-top: none; }
+  &:last-child { padding-bottom: 0; }
+}
+
+/* Красная пилюля «Выйти» — строка «Выход из системы» */
+.btn-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border: 1px solid #ffdad6;
+  border-radius: 9999px;
+  background: none;
+  color: #d32f2f;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    line-height: 18px;
+  }
+
+  &:hover { background: rgba(211, 47, 47, 0.08); }
 }
 
 .setting-text {

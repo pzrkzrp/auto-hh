@@ -247,8 +247,16 @@ html.dark-theme {
     color: rgba(255, 255, 255, 0.9) !important;
     &::placeholder { color: rgba(255, 255, 255, 0.4) !important; }
   }
+  .login-mode-toggle { background: rgba(255, 255, 255, 0.12) !important; }
+  .mode-btn { color: rgba(255, 255, 255, 0.7) !important; }
+  .mode-btn.active { background: #1e1e1e !important; color: rgba(255, 255, 255, 0.9) !important; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important; }
   .lang-select-icon { color: rgba(255, 255, 255, 0.6) !important; }
   .btn-ghost { color: rgba(255, 255, 255, 0.7) !important; &:hover { background: rgba(255, 255, 255, 0.08) !important; } }
+  .btn-logout {
+    border-color: rgba(239, 154, 154, 0.4) !important;
+    color: #ef9a9a !important;
+    &:hover { background: rgba(239, 154, 154, 0.15) !important; }
+  }
 
   // Настройки: аккаунты
   .account-row {
@@ -265,7 +273,7 @@ html.dark-theme {
   .account-login { color: #4dd0e1 !important; border-color: #4dd0e1 !important; &:hover { background: rgba(77, 208, 225, 0.12) !important; } }
 
   // Настройки: приложение
-  .app-setting-row { border-bottom-color: rgba(255, 255, 255, 0.08) !important; }
+  .app-setting-row { border-top-color: rgba(255, 255, 255, 0.08) !important; }
 
   // Конфиг: вкладки и конструктор запроса
   .tab-bar { border-bottom-color: rgba(255, 255, 255, 0.08) !important; }
