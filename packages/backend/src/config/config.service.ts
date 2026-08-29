@@ -74,6 +74,10 @@ export class ConfigService {
         _id: String(c._id),
         name: c.name || 'Конфигурация',
         updatedAt: c.updatedAt,
+        // Для карточки списка: активность расписания (статус «Активен»/«Пауза»)
+        // и текст запроса (бейдж-тег на карточке).
+        active: c.schedule?.enabled !== false,
+        searchText: typeof c.search?.text === 'string' ? c.search.text : '',
       })),
     };
   }

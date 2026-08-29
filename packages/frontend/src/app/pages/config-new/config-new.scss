@@ -1,0 +1,148 @@
+.config-new-canvas {
+  display: flex;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+/* Карточка-диалог по дизайну Figma: 448×272, скругление 12, тень */
+.config-new-card {
+  width: 100%;
+  max-width: 448px;
+  padding: 24px;
+  border-radius: 12px;
+  background: #fcf9f8;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.config-new-title {
+  margin: 0;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  color: #1b1b1c;
+}
+
+.config-new-subtitle {
+  margin: 8px 0 0;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.25px;
+  line-height: 20px;
+  color: #444654;
+}
+
+/* ── Ошибка ────────────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: #fce4ec;
+  border: 1px solid #ef9a9a;
+  border-radius: 8px;
+  color: #c62828;
+  font-size: 0.9rem;
+}
+
+/* ── Поле названия ─────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.field-label {
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  line-height: 16px;
+  color: #1b1b1c;
+}
+
+.field-input {
+  height: 38px;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border: 1px solid #c4c5d7;
+  border-radius: 6px;
+  background: #fcf9f8;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.25px;
+  line-height: 20px;
+  color: #1b1b1c;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &::placeholder { color: #6b7280; }
+
+  &:focus {
+    border-color: #264fd1;
+    box-shadow: 0 0 0 3px rgba(38, 79, 209, 0.15);
+  }
+}
+
+/* ── Кнопки: Отмена / Добавить ─────────── */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid #00d2fd;
+  border-radius: 9999px;
+  background: none;
+  color: #00d2fd;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  line-height: 20px;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover { background: rgba(0, 210, 253, 0.12); }
+}
+
+.btn-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 9999px;
+  background: #264fd1;
+  color: #ffffff;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover:not(:disabled) { background: #1f43b8; box-shadow: 0 2px 8px rgba(38, 79, 209, 0.3); }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

@@ -19,7 +19,7 @@ export const routes: Routes = [
       { path: 'resumes', loadComponent: () => import('./pages/resumes/resumes').then(m => m.ResumeListPageComponent) },
       { path: 'grade', loadComponent: () => import('./pages/grade/grade').then(m => m.GradePageComponent) },
       { path: 'config', loadComponent: () => import('./pages/config-list/config-list').then(m => m.ConfigListPageComponent) },
-      { path: 'config/new', loadComponent: () => import('./pages/config/config').then(m => m.ConfigPageComponent) },
+      { path: 'config/new', loadComponent: () => import('./pages/config-new/config-new').then(m => m.ConfigNewPageComponent) },
       { path: 'config/:id', loadComponent: () => import('./pages/config/config').then(m => m.ConfigPageComponent) },
       { path: 'settings', loadComponent: () => import('./pages/settings/settings').then(m => m.SettingsPageComponent) },
     ],

@@ -1,5 +1,5 @@
 import { Component, OnInit, WritableSignal, computed, inject, signal } from '@angular/core';
-import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -16,9 +16,9 @@ import { ResumeDoc } from '../../core/models/types';
 // Чип-поле конструктора запроса (вкладка «Конструктор запроса»).
 type ChipField = 'title' | 'description' | 'excludedWords' | 'excludedCompanies';
 
-// Форма конфига: /config/new — создание (имя + «Создать»), /config/:id —
-// редактирование (имя + панель с вкладками «Параметры запуска»/«Конструктор
-// запроса»). После создания — редирект на /config/:id.
+// Форма редактирования конфига (/config/:id): имя + панель с вкладками
+// «Параметры запуска»/«Конструктор запроса». Создание (/config/new) вынесено
+// в отдельный компонент config-new.
 @Component({
   selector: 'app-config',
   standalone: true,
@@ -27,9 +27,7 @@ type ChipField = 'title' | 'description' | 'excludedWords' | 'excludedCompanies'
   styleUrls: ['./config.scss'],
 })
 export class ConfigPageComponent implements OnInit {
-  // id === 'new' — режим создания; иначе редактирование существующего конфига.
-  configId = signal<string>('new');
-  isNew = signal(false);
+  configId = signal<string>('');
 
   // Активная вкладка панели. По умолчанию «Конструктор запроса» — как в дизайне.
   activeTab = signal<'launch' | 'query'>('query');
@@ -46,7 +44,6 @@ export class ConfigPageComponent implements OnInit {
   applyForm = form(this.applyModel);
 
   loading = signal(false);
-  creating = signal(false);
   error = signal('');
 
   // Резюме: список доступных + выбранное (resumeId из коллекции resumes).
@@ -91,19 +88,13 @@ export class ConfigPageComponent implements OnInit {
   private configService = inject(ConfigService);
   private resumeService = inject(ResumeService);
   private snackBar = inject(MatSnackBar);
-  private router = inject(Router);
   private route = inject(ActivatedRoute);
 
   ngOnInit() {
     this.route.paramMap.subscribe((params) => {
-      const id = params.get('id') || 'new';
+      const id = params.get('id') || '';
       this.configId.set(id);
-      this.isNew.set(id === 'new');
-      if (id === 'new') {
-        this.loading.set(false);
-      } else {
-        this.loadConfig(id);
-      }
+      if (id) this.loadConfig(id);
     });
     this.resumeService.loadResumes().subscribe({
       next: (resumes) => this.resumes.set(resumes),
@@ -130,20 +121,6 @@ export class ConfigPageComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => { this.error.set('Ошибка загрузки конфига'); this.loading.set(false); },
-    });
-  }
-
-  // Создание: POST /api/config → редирект на /config/:id.
-  createConfig() {
-    const name = this.nameForm().value().name.trim();
-    if (!name) return;
-    this.creating.set(true);
-    this.configService.createConfig(name).subscribe({
-      next: (created) => {
-        this.snackBar.open('Создано', 'OK', { duration: 2000 });
-        this.router.navigate(['/config', created._id]);
-      },
-      error: () => { this.error.set('Ошибка создания конфига'); this.creating.set(false); },
     });
   }
 

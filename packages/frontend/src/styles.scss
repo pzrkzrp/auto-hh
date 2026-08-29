@@ -297,6 +297,50 @@ html.dark-theme {
     &:hover { background: rgba(255, 255, 255, 0.08) !important; }
   }
 
+  // Конфиг: список карточек (бенто-сетка). Фон карточки — общий блок выше
+  // (.config-card), здесь — её содержимое.
+  .config-title {
+    color: rgba(255, 255, 255, 0.9) !important;
+    &:hover { color: #90caf9 !important; }
+  }
+  .config-badge { background: rgba(255, 255, 255, 0.12) !important; color: rgba(255, 255, 255, 0.7) !important; }
+  .config-menu { color: rgba(255, 255, 255, 0.5) !important; &:hover { background: rgba(255, 255, 255, 0.08) !important; color: rgba(255, 255, 255, 0.85) !important; } }
+  .config-card-foot { border-top-color: rgba(255, 255, 255, 0.08) !important; }
+  .config-run-label { color: rgba(255, 255, 255, 0.6) !important; }
+  .config-run-value { color: rgba(255, 255, 255, 0.9) !important; }
+  .config-status.active { color: #a5d6a7 !important; }
+  .config-status:not(.active) { color: #ffcc80 !important; }
+  .config-add {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    &:hover { background: rgba(255, 255, 255, 0.08) !important; border-color: #90caf9 !important; }
+  }
+  .config-add-icon { background: rgba(144, 202, 249, 0.18) !important; color: #90caf9 !important; }
+  .config-add-title { color: #90caf9 !important; }
+  .config-add-desc { color: rgba(255, 255, 255, 0.6) !important; }
+
+  // Конфиг: создание (/config/new) — карточка-диалог
+  .config-new-card {
+    background: #1e1e1e !important;
+    border-color: #2e2e2e !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+  }
+  .config-new-title { color: rgba(255, 255, 255, 0.9) !important; }
+  .config-new-subtitle { color: rgba(255, 255, 255, 0.6) !important; }
+  .field-label { color: rgba(255, 255, 255, 0.9) !important; }
+  .field-input {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    &::placeholder { color: rgba(255, 255, 255, 0.4) !important; }
+    &:focus { border-color: #90caf9 !important; box-shadow: 0 0 0 3px rgba(144, 202, 249, 0.15) !important; }
+  }
+  .btn-cancel {
+    color: #4dd0e1 !important;
+    border-color: #4dd0e1 !important;
+    &:hover { background: rgba(77, 208, 225, 0.12) !important; }
+  }
+
   .score-badge {
     background: #2e2e2e !important;
     color: #bdbdbd !important;

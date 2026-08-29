@@ -50,11 +50,14 @@ export interface ResumeDoc {
   createdAt: string;
 }
 
-// Конфиг для списка на /config.
+// Конфиг для списка на /config. active/searchText — для карточки по дизайну
+// (статус «Активен»/«Пауза» и бейдж-тег с текстом запроса).
 export interface ConfigSummary {
   _id: string;
   name: string;
   updatedAt: string;
+  active?: boolean;
+  searchText?: string;
 }
 
 // Полный документ конфига (GET/PUT /api/config/:id).

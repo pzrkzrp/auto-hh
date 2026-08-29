@@ -1,0 +1,33 @@
+<div class="config-new-canvas">
+  <div class="config-new-card">
+    <h1 class="config-new-title">Создание нового конфига</h1>
+    <p class="config-new-subtitle">Укажите параметры для нового поиска кандидатов.</p>
+
+    @if (error()) {
+      <div class="error-banner">
+        <span>⚠️</span>
+        <span>{{ error() }}</span>
+      </div>
+    }
+
+    <div class="field">
+      <label class="field-label" for="config-name">Название конфига</label>
+      <input
+        id="config-name"
+        class="field-input"
+        [value]="name()"
+        (input)="onInput($event)"
+        (keydown.enter)="onEnter()"
+        placeholder="Например: Frontend Developer (React)"
+        autofocus
+      />
+    </div>
+
+    <div class="actions">
+      <a class="btn-cancel" routerLink="/config">Отмена</a>
+      <button class="btn-submit" (click)="create()" [disabled]="!name().trim() || creating()">
+        {{ creating() ? 'Создаём…' : 'Добавить' }}
+      </button>
+    </div>
+  </div>
+</div>
